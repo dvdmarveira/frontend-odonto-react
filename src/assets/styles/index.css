@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply font-poppins;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-blue_primary text-white px-4 py-2 rounded-md hover:bg-blue_secondary transition-colors;
+  }
+
+  .btn-secondary {
+    @apply bg-gray_neutro text-blue_primary px-4 py-2 rounded-md hover:bg-gray_primary hover:text-white transition-colors;
+  }
+
+  .input-field {
+    @apply border border-gray_neutro rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue_primary;
+  }
+}
