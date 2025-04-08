@@ -6,6 +6,7 @@ import {
   Eye,
   PencilSimple,
 } from "@phosphor-icons/react";
+import { useNavigate } from "react-router-dom";
 
 const Cases = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -14,6 +15,7 @@ const Cases = () => {
   const [evidenceType, setEvidenceType] = useState("Radiografia Panorâmica");
   const [uploadMethod, setUploadMethod] = useState("Deste Dispositivo");
   const [caseName, setCaseName] = useState("");
+  const navigate = useNavigate();
 
   // Simula carregamento de casos de uma API
   useEffect(() => {
@@ -52,6 +54,7 @@ const Cases = () => {
 
   const handleAddCase = () => {
     console.log("Adicionar novo caso");
+    navigate("/cases/add");
   };
 
   const handleAddEvidence = () => {
@@ -60,12 +63,13 @@ const Cases = () => {
 
   const handleViewCase = (caseId) => {
     console.log(`Visualizar caso ${caseId}`);
+    navigate(`/cases/${caseId}`);
   };
 
   return (
     <div className="p-6">
       {/* Search Bar and Add Button */}
-      <div className="flex items-center justify-between mb-6">
+      {/* <div className="flex items-center justify-between mb-6">
         <div className="w-3/4">
           <SearchBar
             value={searchTerm}
@@ -73,17 +77,11 @@ const Cases = () => {
             placeholder="Pesquisar casos..."
           />
         </div>
-        <button
-          onClick={handleAddCase}
-          className="bg-blue_secondary hover:bg-blue_primary text-white font-bold py-3 px-6 rounded-full flex items-center"
-        >
-          <Plus size={20} className="mr-2" />
-          Adicionar Caso
-        </button>
-      </div>
+
+      </div> */}
 
       {/* Stats Cards */}
-      <div className="bg-blue_secondary rounded-lg p-4 mb-8 flex justify-between">
+      <div className="bg-blue_dark shadow-xl rounded-lg p-4 mb-20 flex justify-between">
         <div className="text-center flex-1 border-r border-blue_primary">
           <h3 className="text-white font-medium">Casos em andamento</h3>
           <p className="text-white text-3xl font-bold">102</p>
@@ -102,20 +100,31 @@ const Cases = () => {
       <div className="mb-6 flex">
         <div className="flex-1">
           <button className="bg-blue_secondary hover:bg-blue_primary text-white font-medium py-2 px-6 rounded-full mr-2">
-            RESPONSÁVEL
+            Responsável
           </button>
           <button className="bg-blue_secondary hover:bg-blue_primary text-white font-medium py-2 px-6 rounded-full mr-2">
-            STATUS
+            Status
           </button>
           <button className="bg-blue_secondary hover:bg-blue_primary text-white font-medium py-2 px-6 rounded-full">
-            DATA
+            Data
           </button>
         </div>
-        <div>
-          <button className="bg-blue_secondary hover:bg-blue_primary text-white font-medium py-2 px-6 rounded-full flex items-center">
-            <MagnifyingGlass size={18} className="mr-2" />
-            BUSCAR
-          </button>
+        <div className="flex flex-row gap-2">
+          <div>
+            <button className="bg-blue_secondary hover:bg-blue_primary text-white font-medium py-2 px-6 rounded-full flex items-center">
+              <MagnifyingGlass size={18} className="mr-2" />
+              Buscar
+            </button>
+          </div>
+          <div>
+            <button
+              onClick={handleAddCase}
+              className="bg-blue_secondary hover:bg-blue_primary text-white font-bold py-2 px-6 rounded-full flex items-center"
+            >
+              <Plus size={20} className="mr-2" />
+              Adicionar Caso
+            </button>
+          </div>
         </div>
       </div>
 
@@ -125,21 +134,24 @@ const Cases = () => {
           <p>Carregando casos...</p>
         </div>
       ) : (
-        <div className="overflow-x-auto mb-8">
-          <table className="w-full bg-blue_tertiary bg-opacity-30 rounded-lg overflow-hidden">
+        <div className="overflow-x-auto mb-14">
+          <table className="w-full bg-blue_tertiary rounded-lg overflow-hidden">
             <tbody>
               {cases.map((caso) => (
                 <tr
                   key={caso.id}
                   className="border-b border-blue_primary border-opacity-20"
                 >
-                  <td className="py-4 px-4 font-medium text-blue_secondary">
+                  <td className="py-4 px-4 font-bold text-white">
                     {caso.responsavel}
                   </td>
-                  <td className="py-4 px-4">
-                    Caso N° {caso.id} - {caso.descricao}
+                  <td className="py-4 px-4 text-white">
+                    <span className="font-bold">Caso N° {caso.id}</span> -{" "}
+                    {caso.descricao}
                   </td>
-                  <td className="py-4 px-4 text-center">{caso.data}</td>
+                  <td className="py-4 px-4 text-center font-bold text-white">
+                    {caso.data}
+                  </td>
                   <td className="py-4 px-4 text-right">
                     <button
                       onClick={() => handleViewCase(caso.id)}
@@ -157,25 +169,24 @@ const Cases = () => {
       )}
 
       {/* Evidences Section */}
-      <h2 className="text-2xl font-bold text-center mb-6">
+      <h2 className="text-2xl font-bold text-blue_dark text-start mb-4">
         Gestão de Evidências
       </h2>
 
-      <div className="bg-blue_primary bg-opacity-30 rounded-lg p-6 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+      <div className="bg-blue_tertiary rounded-lg p-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
           <div>
             <div className="relative mb-6">
-              <label className="block text-gray-700 mb-2">Nome do Caso</label>
               <div className="flex">
                 <input
                   type="text"
                   value={caseName}
                   onChange={(e) => setCaseName(e.target.value)}
-                  className="w-full border-b-2 border-gray-300 py-2 bg-transparent outline-none"
                   placeholder="Nome do Caso"
+                  className="w-full mt-7 border-b-2 border-gray-300 text-white placeholder-white py-2 bg-transparent outline-none"
                 />
                 <button className="ml-2">
-                  <PencilSimple size={20} className="text-gray-500" />
+                  <PencilSimple size={20} className="text-white" />
                 </button>
               </div>
             </div>
@@ -183,7 +194,7 @@ const Cases = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-gray-700 mb-2">
+              <label className="block text-white font-bold mb-2">
                 Tipo de Evidência:
               </label>
               <div className="relative">
@@ -209,7 +220,7 @@ const Cases = () => {
             </div>
 
             <div>
-              <label className="block text-gray-700 mb-2">
+              <label className="block text-white font-bold mb-2">
                 Upload da Imagem:
               </label>
               <div className="relative">

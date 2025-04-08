@@ -21,18 +21,22 @@ const Layout = () => {
   return (
     <div className="flex flex-col h-screen">
       {/* Header */}
-      <header className="bg-blue_secondary text-white py-4 px-6 flex justify-between items-center">
+      <header className="bg-blue_secondary text-white py-2 px-6 flex justify-between items-center">
         <div className="flex items-center">
           <img
             src={peridentalLogo}
             alt="Logo Peridental"
-            className="w-20 h-20"
+            className="w-18 h-18"
           />
           <h1 className="text-2xl font-bold">Peridental</h1>
         </div>
         <div className="text-center">
           {location.pathname.includes("/admin/users") ? (
             <h2 className="text-xl font-bold">GESTÃO DE ACESSO</h2>
+          ) : location.pathname.match(/\/cases\/\d+/) ? (
+            <h2 className="text-xl font-bold">CASO DETALHADO</h2>
+          ) : location.pathname === "/cases/add" ? (
+            <h2 className="text-xl font-bold">NOVOS CASOS</h2>
           ) : (
             <h2 className="text-xl font-bold">GESTÃO ODONTO-LEGAL</h2>
           )}

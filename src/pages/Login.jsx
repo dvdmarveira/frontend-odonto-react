@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { User, LockKey, Eye, EyeSlash } from "@phosphor-icons/react";
+import peridentalLogo from "../assets/imgs/logo/peridentalLogo.svg";
 
 const Login = () => {
   const [username, setUsername] = useState("");
@@ -32,46 +33,11 @@ const Login = () => {
       <div className="w-full max-w-md px-6 py-8 flex flex-col items-center">
         {/* Logo */}
         <div className="bg-blue_secondary w-24 h-24 rounded-full flex items-center justify-center mb-8">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            className="w-14 h-14 text-white"
-          >
-            <path
-              fill="none"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="1.5"
-              d="M7 8c0-2.761 2.239-5 5-5s5 2.239 5 5c0 3.418-2.239 10-5 10S7 11.418 7 8Z"
-            />
-            <path
-              fill="none"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="1.5"
-              d="M12.5 3.5c2.642.298 4.5 2.239 4.5 4.5 0 3.418-2.239 10-5 10-.335 0-.67-.037-.995-.112"
-            />
-            <circle
-              cx="16"
-              cy="12"
-              r="3"
-              fill="none"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="1.5"
-            />
-            <path
-              fill="none"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="1.5"
-              d="m18.5 14.5 1 1"
-            />
-          </svg>
+          <img
+            src={peridentalLogo}
+            alt="Logo Peridental"
+            className="w-18 h-18"
+          />
         </div>
 
         {/* Título e subtítulo */}

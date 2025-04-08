@@ -8,6 +8,8 @@ import Layout from "./components/Layout";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Cases from "./pages/Cases";
+import CaseDetail from "./pages/CaseDetail";
+import AddCase from "./pages/AddCase";
 import Evidences from "./pages/Evidences";
 import Reports from "./pages/Reports";
 import AdminUsers from "./pages/AdminUsers";
@@ -46,6 +48,8 @@ function App() {
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="cases" element={<Cases />} />
+          <Route path="cases/add" element={<AddCase />} />
+          <Route path="cases/:caseId" element={<CaseDetail />} />
           <Route path="evidences" element={<Evidences />} />
           <Route path="reports" element={<Reports />} />
           <Route path="admin/users" element={<AdminUsers />} />
