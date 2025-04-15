@@ -1,30 +1,34 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { login } from "../services/auth";
 import { User, LockKey, Eye, EyeSlash } from "@phosphor-icons/react";
 import peridentalLogo from "../assets/imgs/logo/peridentalLogo.svg";
 
 const Login = () => {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
 
     // Validação básica
-    if (!username || !password) {
+    if (!email || !password) {
       setError("Por favor, preencha todos os campos");
       return;
     }
 
-    // Simulação de login - em produção seria uma chamada para API
-    if (username === "admin" && password === "admin") {
-      localStorage.setItem("user", JSON.stringify({ username, role: "admin" }));
+    try {
+      await login(email, password);
+      console.log(
+        "Login bem-sucedido! Redirecionando para o dashboard do sistema..."
+      );
       navigate("/dashboard");
-    } else {
-      setError("Usuário ou senha inválidos");
+    } catch (err) {
+      setError(err.message || "Erro ao fazer login");
     }
   };
 
@@ -64,9 +68,9 @@ const Login = () => {
             <input
               type="text"
               className="w-full py-4 pl-12 pr-4 text-gray-700 border border-[#d5d5d5] rounded-lg focus:outline-none focus:border-blue_secondary"
-              placeholder="Nome do usuário"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              placeholder="E-mail"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
             />
           </div>
 

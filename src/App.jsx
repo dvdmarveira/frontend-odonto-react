@@ -21,7 +21,7 @@ import "./assets/styles/index.css";
 function App() {
   // Função para verificar se o usuário está autenticado
   const isAuthenticated = () => {
-    return localStorage.getItem("user") !== null;
+    return localStorage.getItem("token") !== null;
   };
 
   // Componente de rota protegida
