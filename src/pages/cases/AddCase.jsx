@@ -1,15 +1,21 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CaretDown, X } from "@phosphor-icons/react";
+import { useAuth } from "../../contexts/useAuth";
+import CaseService from "../../services/cases/caseService";
+import { toast } from "react-toastify";
 
 const AddCase = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(false);
+
   const [formData, setFormData] = useState({
     tipoCaso: "",
     numeroCaso: "",
-    responsavel: "",
-    data: "",
-    status: "",
+    responsavel: user?.nome || "",
+    data: new Date().toISOString().split("T")[0],
+    status: "em_andamento",
     descricao: "",
     historico: "",
     analises: "",
@@ -45,6 +51,20 @@ const AddCase = () => {
     }));
   };
 
+  const handleFileUpload = (files, type) => {
+    if (type === "evidencia") {
+      setNovaEvidencia((prev) => ({
+        ...prev,
+        uploads: [...prev.uploads, ...Array.from(files)],
+      }));
+    } else {
+      setNovoDocumento((prev) => ({
+        ...prev,
+        uploads: [...prev.uploads, ...Array.from(files)],
+      }));
+    }
+  };
+
   const handleNovoDocumentoChange = (e) => {
     const { name, value } = e.target;
     setNovoDocumento((prev) => ({
@@ -58,7 +78,7 @@ const AddCase = () => {
       novaEvidencia.tipo === "Selecionar" ||
       !novaEvidencia.descricao.trim()
     ) {
-      alert("Tipo e descrição da evidência são obrigatórios!");
+      toast.error("Tipo e descrição da evidência são obrigatórios!");
       return;
     }
 
@@ -75,7 +95,7 @@ const AddCase = () => {
       novoDocumento.tipo === "Selecionar" ||
       !novoDocumento.informacoes.trim()
     ) {
-      alert("Tipo e informações do documento são obrigatórios!");
+      toast.error("Tipo e informações do documento são obrigatórios!");
       return;
     }
 
@@ -95,15 +115,49 @@ const AddCase = () => {
     setDocumentos((prev) => prev.filter((doc) => doc.id !== id));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const dadosCompletos = {
-      ...formData,
-      evidencias,
-      documentos,
-    };
-    console.log("Dados do formulário:", dadosCompletos);
-    navigate("/cases");
+    setLoading(true);
+
+    try {
+      // Criar o caso
+      const caseResponse = await CaseService.createCase(formData);
+
+      if (!caseResponse.success) {
+        throw new Error(caseResponse.error);
+      }
+
+      const caseId = caseResponse.data.id;
+
+      // Adicionar evidências
+      for (const evidencia of evidencias) {
+        const evidenceResponse = await CaseService.addEvidence(
+          caseId,
+          evidencia
+        );
+        if (!evidenceResponse.success) {
+          throw new Error(evidenceResponse.error);
+        }
+      }
+
+      // Adicionar documentos
+      for (const documento of documentos) {
+        const documentResponse = await CaseService.addDocument(
+          caseId,
+          documento
+        );
+        if (!documentResponse.success) {
+          throw new Error(documentResponse.error);
+        }
+      }
+
+      toast.success("Caso criado com sucesso!");
+      navigate("/cases");
+    } catch (error) {
+      toast.error(error.message || "Erro ao criar caso");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -116,7 +170,8 @@ const AddCase = () => {
           <div className="relative">
             <button
               type="button"
-              className="bg-blue_secondary text-white px-4 py-2 rounded-full flex items-center"
+              className="bg-blue_dark text-white px-4 py-2 rounded-md flex items-center"
+              disabled={loading}
             >
               Tipo de Caso <CaretDown size={16} className="ml-2" />
             </button>
@@ -125,23 +180,12 @@ const AddCase = () => {
               value={formData.tipoCaso}
               onChange={handleChange}
               className="absolute opacity-0 inset-0 w-full h-full cursor-pointer"
+              disabled={loading}
             >
               <option value="">Selecionar</option>
-              <option value="identificacao">Identificação</option>
-              <option value="avaliacao">Avaliação</option>
-              <option value="laudo">Laudo</option>
+              <option value="acidente">Acidente</option>
+              <option value="criminal">Criminal</option>
             </select>
-          </div>
-
-          <div>
-            <input
-              type="text"
-              name="numeroCaso"
-              value={formData.numeroCaso}
-              onChange={handleChange}
-              placeholder="N° do Caso"
-              className="bg-blue_secondary text-white px-4 py-2 rounded-full placeholder-white"
-            />
           </div>
 
           <div>
@@ -151,7 +195,8 @@ const AddCase = () => {
               value={formData.responsavel}
               onChange={handleChange}
               placeholder="Nome do Responsável"
-              className="bg-blue_secondary text-white px-4 py-2 rounded-full placeholder-white"
+              className="bg-blue_dark text-white px-4 py-2 rounded-md placeholder-white"
+              disabled={loading}
             />
           </div>
 
@@ -161,14 +206,16 @@ const AddCase = () => {
               name="data"
               value={formData.data}
               onChange={handleChange}
-              className="bg-blue_secondary text-white px-4 py-2 rounded-full"
+              className="bg-blue_dark text-white px-4 py-2 rounded-md"
+              disabled={loading}
             />
           </div>
 
           <div className="relative">
             <button
               type="button"
-              className="bg-blue_secondary text-white px-4 py-2 rounded-full flex items-center"
+              className="bg-blue_dark text-white px-4 py-2 rounded-md flex items-center"
+              disabled={loading}
             >
               Status <CaretDown size={16} className="ml-2" />
             </button>
@@ -177,8 +224,8 @@ const AddCase = () => {
               value={formData.status}
               onChange={handleChange}
               className="absolute opacity-0 inset-0 w-full h-full cursor-pointer"
+              disabled={loading}
             >
-              <option value="">Selecionar</option>
               <option value="em_andamento">Em Andamento</option>
               <option value="concluido">Concluído</option>
               <option value="arquivado">Arquivado</option>
@@ -193,7 +240,8 @@ const AddCase = () => {
             value={formData.descricao}
             onChange={handleChange}
             placeholder="Descrição do Caso"
-            className="w-full p-4 bg-blue_tertiary border-none rounded-lg text-white placeholder-white placeholder-opacity-70 focus:outline-none focus:ring-2 focus:ring-blue_secondary h-32"
+            className="w-full p-4 bg-blue_quaternary border-none rounded-lg text-white placeholder-white placeholder-opacity-70 focus:outline-none focus:ring-2 focus:ring-blue_dark h-32"
+            disabled={loading}
           ></textarea>
         </div>
 
@@ -203,8 +251,9 @@ const AddCase = () => {
             name="historico"
             value={formData.historico}
             onChange={handleChange}
-            placeholder="Histórico:"
-            className="w-full p-4 bg-blue_tertiary border-none rounded-lg text-white placeholder-white placeholder-opacity-70 focus:outline-none focus:ring-2 focus:ring-blue_secondary h-24"
+            placeholder="Histórico"
+            className="w-full p-4 bg-blue_quaternary border-none rounded-lg text-white placeholder-white placeholder-opacity-70 focus:outline-none focus:ring-2 focus:ring-blue_dark h-24"
+            disabled={loading}
           ></textarea>
         </div>
 
@@ -219,14 +268,15 @@ const AddCase = () => {
                 name="tipo"
                 value={novaEvidencia.tipo}
                 onChange={handleNovaEvidenciaChange}
-                className="appearance-none w-full bg-blue_secondary text-white py-2 px-4 rounded-full cursor-pointer pr-10"
+                className="appearance-none w-fit bg-blue_dark text-white font-semibold py-2 px-4 rounded-md cursor-pointer"
+                disabled={loading}
               >
                 <option>Selecionar</option>
                 <option>Radiografia Panorâmica</option>
                 <option>Radiografia Periapical</option>
                 <option>Fotografia Intraoral</option>
               </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-white">
+              <div className="pointer-events-none absolute top-1/2 right-3 transform -translate-y-1/2 text-black">
                 <CaretDown size={16} />
               </div>
             </div>
@@ -235,18 +285,14 @@ const AddCase = () => {
           <div>
             <p className="text-gray-700 mb-2">Upload de Imagem:</p>
             <div className="relative">
-              <select
-                name="upload"
-                className="appearance-none w-full bg-blue_secondary text-white py-2 px-4 rounded-full cursor-pointer pr-10"
-              >
-                <option>Selecionar</option>
-                <option>Deste Dispositivo</option>
-                <option>Da Câmera</option>
-                <option>Do Google Drive</option>
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-white">
-                <CaretDown size={16} />
-              </div>
+              <input
+                type="file"
+                multiple
+                onChange={(e) => handleFileUpload(e.target.files, "evidencia")}
+                className="appearance-none w-fit bg-blue_dark text-white font-semibold py-2 px-4 rounded-md cursor-pointer"
+                disabled={loading}
+                accept="image/*,.pdf"
+              />
             </div>
           </div>
 
@@ -254,7 +300,8 @@ const AddCase = () => {
             <button
               type="button"
               onClick={handleAddEvidencia}
-              className="bg-blue_secondary hover:bg-blue_primary text-white font-bold py-2 px-6 rounded-full w-full"
+              className="bg-blue_dark hover:bg-blue_primary text-white font-semibold py-2 px-6 rounded-md w-fit"
+              disabled={loading}
             >
               Adicionar
             </button>
@@ -268,7 +315,8 @@ const AddCase = () => {
             value={novaEvidencia.descricao}
             onChange={handleNovaEvidenciaChange}
             placeholder="Descrição de Evidências"
-            className="w-full p-4 bg-blue_tertiary border-none rounded-lg text-white placeholder-white placeholder-opacity-70 focus:outline-none focus:ring-2 focus:ring-blue_secondary h-24"
+            className="w-full p-4 bg-blue_quaternary border-none rounded-lg text-white placeholder-white placeholder-opacity-70 focus:outline-none focus:ring-2 focus:ring-blue_dark h-24"
+            disabled={loading}
           ></textarea>
         </div>
 
@@ -282,12 +330,13 @@ const AddCase = () => {
               {evidencias.map((ev) => (
                 <div
                   key={ev.id}
-                  className="bg-blue_tertiary p-4 rounded-lg relative"
+                  className="bg-blue_quaternary p-4 rounded-lg relative"
                 >
                   <button
                     type="button"
                     onClick={() => handleRemoveEvidencia(ev.id)}
                     className="absolute top-2 right-2 text-white hover:text-red-500"
+                    disabled={loading}
                   >
                     <X size={20} />
                   </button>
@@ -297,6 +346,11 @@ const AddCase = () => {
                   <p className="text-white">
                     <strong>Descrição:</strong> {ev.descricao}
                   </p>
+                  {ev.uploads.length > 0 && (
+                    <p className="text-white">
+                      <strong>Arquivos:</strong> {ev.uploads.length} arquivo(s)
+                    </p>
+                  )}
                 </div>
               ))}
             </div>
@@ -307,18 +361,13 @@ const AddCase = () => {
         <h2 className="text-2xl font-bold mb-6">Análises e Comparações</h2>
 
         <div className="mb-10">
-          <button
-            type="button"
-            className="mb-4 bg-blue_tertiary text-white px-6 py-3 rounded-lg hover:bg-opacity-90"
-          >
-            Adicionar Informações
-          </button>
           <textarea
             name="analises"
             value={formData.analises}
             onChange={handleChange}
             placeholder="Adicione análises e comparações aqui"
-            className="w-full p-4 bg-blue_tertiary border-none rounded-lg text-white placeholder-white placeholder-opacity-70 focus:outline-none focus:ring-2 focus:ring-blue_secondary h-24"
+            className="w-full p-4 bg-blue_quaternary border-none rounded-lg text-white placeholder-white placeholder-opacity-70 focus:outline-none focus:ring-2 focus:ring-blue_dark h-24"
+            disabled={loading}
           ></textarea>
         </div>
 
@@ -333,7 +382,8 @@ const AddCase = () => {
                 name="tipo"
                 value={novoDocumento.tipo}
                 onChange={handleNovoDocumentoChange}
-                className="appearance-none w-full bg-blue_secondary text-white py-2 px-4 rounded-full cursor-pointer pr-10"
+                className="appearance-none w-fit bg-blue_dark text-white font-semibold py-2 px-4 rounded-md cursor-pointer"
+                disabled={loading}
               >
                 <option>Selecionar</option>
                 <option>Laudo Pericial</option>
@@ -349,18 +399,14 @@ const AddCase = () => {
           <div>
             <p className="text-gray-700 mb-2">Upload de Arquivo:</p>
             <div className="relative">
-              <select
-                name="upload"
-                className="appearance-none w-full bg-blue_secondary text-white py-2 px-4 rounded-full cursor-pointer pr-10"
-              >
-                <option>Selecionar</option>
-                <option>Deste Dispositivo</option>
-                <option>Da Câmera</option>
-                <option>Do Google Drive</option>
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-white">
-                <CaretDown size={16} />
-              </div>
+              <input
+                type="file"
+                multiple
+                onChange={(e) => handleFileUpload(e.target.files, "documento")}
+                className="appearance-none w-fit bg-blue_dark text-white font-semibold py-2 px-4 rounded-md cursor-pointer"
+                disabled={loading}
+                accept=".pdf,.doc,.docx"
+              />
             </div>
           </div>
 
@@ -368,7 +414,8 @@ const AddCase = () => {
             <button
               type="button"
               onClick={handleAddDocumento}
-              className="bg-blue_secondary hover:bg-blue_primary text-white font-bold py-2 px-6 rounded-full w-full"
+              className="bg-blue_dark hover:bg-blue_primary text-white font-semibold py-2 px-6 rounded-md w-fit"
+              disabled={loading}
             >
               Adicionar
             </button>
@@ -381,7 +428,8 @@ const AddCase = () => {
             value={novoDocumento.informacoes}
             onChange={handleNovoDocumentoChange}
             placeholder="Informações sobre o documento"
-            className="w-full p-4 bg-blue_tertiary border-none rounded-lg text-white placeholder-white placeholder-opacity-70 focus:outline-none focus:ring-2 focus:ring-blue_secondary h-24"
+            className="w-full p-4 bg-blue_quaternary border-none rounded-lg text-white placeholder-white placeholder-opacity-70 focus:outline-none focus:ring-2 focus:ring-blue_dark h-24"
+            disabled={loading}
           ></textarea>
         </div>
 
@@ -395,12 +443,13 @@ const AddCase = () => {
               {documentos.map((doc) => (
                 <div
                   key={doc.id}
-                  className="bg-blue_tertiary p-4 rounded-lg relative"
+                  className="bg-blue_quaternary p-4 rounded-lg relative"
                 >
                   <button
                     type="button"
                     onClick={() => handleRemoveDocumento(doc.id)}
                     className="absolute top-2 right-2 text-white hover:text-red-500"
+                    disabled={loading}
                   >
                     <X size={20} />
                   </button>
@@ -410,6 +459,11 @@ const AddCase = () => {
                   <p className="text-white">
                     <strong>Informações:</strong> {doc.informacoes}
                   </p>
+                  {doc.uploads.length > 0 && (
+                    <p className="text-white">
+                      <strong>Arquivos:</strong> {doc.uploads.length} arquivo(s)
+                    </p>
+                  )}
                 </div>
               ))}
             </div>
@@ -420,9 +474,10 @@ const AddCase = () => {
         <div className="flex justify-center mt-10">
           <button
             type="submit"
-            className="bg-red_secondary hover:bg-opacity-90 text-white font-bold py-3 px-16 rounded-full transition-colors duration-200"
+            className="bg-red_secondary hover:bg-opacity-90 text-white font-semibold py-3 px-16 rounded-md transition-colors duration-200"
+            disabled={loading}
           >
-            Salvar
+            {loading ? "Salvando..." : "Salvar"}
           </button>
         </div>
       </form>

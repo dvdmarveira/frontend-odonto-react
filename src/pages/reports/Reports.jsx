@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import SearchBar from "../components/SearchBar";
+import SearchBar from "../../components/SearchBar";
 
 const Reports = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -14,17 +14,15 @@ const Reports = () => {
       />
 
       <div className="bg-white rounded-lg shadow-sm p-6">
-        <h2 className="text-xl font-semibold text-blue_primary mb-4">
-          Geração de Laudos Periciais
-        </h2>
+        <h2 className="text-xl font-semibold text-blue_primary mb-4">Laudos</h2>
         <p className="text-gray-600 mb-6">
-          Esta página permite a geração e visualização de relatórios
-          relacionados aos casos odontológicos forenses.
+          Esta página permite a geração e visualização de laudos relacionados
+          aos casos odontológicos forenses.
         </p>
 
         <div className="flex justify-center items-center h-60 bg-gray-100 rounded-lg border border-dashed border-gray-300">
           <p className="text-gray-500">
-            Conteúdo da página de Relatórios em desenvolvimento
+            Conteúdo da página de Laudos em desenvolvimento
           </p>
         </div>
       </div>

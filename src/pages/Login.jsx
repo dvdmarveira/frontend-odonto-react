@@ -1,10 +1,11 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { login } from "../services/auth";
+import { useContext, useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { useAuth } from "../contexts/useAuth";
 import { User, LockKey, Eye, EyeSlash } from "@phosphor-icons/react";
 import peridentalLogo from "../assets/imgs/logo/peridentalLogo.svg";
 
 const Login = () => {
+  const { signIn } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -14,6 +15,7 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    console.log("Iniciando processo de login...");
 
     // Validação básica
     if (!email || !password) {
@@ -22,12 +24,13 @@ const Login = () => {
     }
 
     try {
-      await login(email, password);
-      console.log(
-        "Login bem-sucedido! Redirecionando para o dashboard do sistema..."
-      );
+      console.log("Tentando fazer login com email:", email);
+      await signIn(email, password);
+      console.log("Login bem-sucedido!");
+      console.log("Redirecionando para /dashboard...");
       navigate("/dashboard");
     } catch (err) {
+      console.error("Erro durante o login:", err);
       setError(err.message || "Erro ao fazer login");
     }
   };
@@ -100,10 +103,18 @@ const Login = () => {
           {/* Botão de login */}
           <button
             type="submit"
-            className="w-full py-4 text-white bg-red_secondary rounded-lg hover:bg-opacity-90 transition-colors"
+            className="w-full py-4 text-white bg-red_secondary rounded-lg hover:bg-opacity-90 transition-colors mb-4"
           >
             Entrar
           </button>
+
+          {/* Link para registro */}
+          <p className="text-center text-gray_primary">
+            Não tem uma conta?{" "}
+            <Link to="/register" className="text-blue_primary hover:underline">
+              Cadastre-se
+            </Link>
+          </p>
         </form>
       </div>
     </div>

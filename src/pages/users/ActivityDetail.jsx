@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { MagnifyingGlassPlus, X } from "@phosphor-icons/react";
-import SearchBar from "../components/SearchBar";
+import SearchBar from "../../components/SearchBar";
 
 const ActivityDetail = () => {
   const { activityId } = useParams();
@@ -9,7 +9,7 @@ const ActivityDetail = () => {
   const [activity, setActivity] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  const [newComment, setNewComment] = useState("");
+  // const [newComment, setNewComment] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
 
@@ -71,22 +71,22 @@ const ActivityDetail = () => {
     navigate(-1); // Volta para a página anterior
   };
 
-  const handleAddComment = () => {
-    if (!newComment.trim()) return;
+  // const handleAddComment = () => {
+  //   if (!newComment.trim()) return;
 
-    const newCommentObj = {
-      id: activity.comments.length + 1,
-      author: "Usuário atual",
-      text: newComment,
-    };
+  //   const newCommentObj = {
+  //     id: activity.comments.length + 1,
+  //     author: "Usuário atual",
+  //     text: newComment,
+  //   };
 
-    setActivity({
-      ...activity,
-      comments: [...activity.comments, newCommentObj],
-    });
+  //   setActivity({
+  //     ...activity,
+  //     comments: [...activity.comments, newCommentObj],
+  //   });
 
-    setNewComment("");
-  };
+  //   setNewComment("");
+  // };
 
   const openImageModal = (image) => {
     setSelectedImage(image);
@@ -113,7 +113,7 @@ const ActivityDetail = () => {
       />
 
       {/* Activity Detail Card */}
-      <div className="bg-gray_primary bg-opacity-[0.23] rounded-lg p-6 relative">
+      <div className="bg-blue_dark rounded-lg p-6 relative">
         {/* Close Button */}
         <button
           onClick={handleClose}
@@ -124,56 +124,49 @@ const ActivityDetail = () => {
 
         {/* Header Information */}
         <div className="mb-6 border-b border-gray-300 pb-4">
-          <h3 className="text-lg font-semibold mb-2">
-            Atividade: {activity.type}
+          <h3 className="text-base text-white">
+            <span className="font-bold">Atividade:</span> {activity.type}
           </h3>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
-              <p>
-                <span className="font-medium">Data e hora de abertura:</span>{" "}
-                {activity.dateTime}
-              </p>
-              <p>
-                <span className="font-medium">Paciente:</span>{" "}
-                {activity.patientName}
-              </p>
-              <p>
-                <span className="font-medium">Sexo:</span>{" "}
-                {activity.patientGender}
-              </p>
-            </div>
-            <div>
-              <p>
-                <span className="font-medium">Local de registro:</span>{" "}
-                {activity.location}
-              </p>
-              <p>
-                <span className="font-medium">N.° de prontuário:</span>{" "}
-                {activity.recordNumber}
-              </p>
-              <p>
-                <span className="font-medium">Registrado por:</span>{" "}
-                {activity.registeredBy}
-              </p>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-1 text-white text-base">
+            <p>
+              <span className="font-bold">Data e hora de abertura:</span>{" "}
+              {activity.dateTime}
+            </p>
+            <p>
+              <span className="font-bold">Paciente:</span>{" "}
+              {activity.patientName}
+            </p>
+            <p>
+              <span className="font-bold">Sexo:</span> {activity.patientGender}
+            </p>
+            <p>
+              <span className="font-bold">Local de registro:</span>{" "}
+              {activity.location}
+            </p>
+            <p>
+              <span className="font-bold">N.° de prontuário:</span>{" "}
+              {activity.recordNumber}
+            </p>
+            <p>
+              <span className="font-bold">Registrado por:</span>{" "}
+              {activity.registeredBy}
+            </p>
           </div>
         </div>
 
         {/* Main Content */}
         <div className="mb-6">
-          <h3 className="text-xl font-bold mb-4 text-center">
+          <h3 className="text-xl font-bold mb-4 text-center text-white">
             Fotografias intraorais e radiografias odontológicas.
           </h3>
 
-          <p className="text-center text-gray-700 mb-8">
-            {activity.description}
-          </p>
+          <p className="text-center text-white mb-8">{activity.description}</p>
 
           {/* Images */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             {activity.images.map((image) => (
-              <div key={image.id} className="text-center">
+              <div key={image.id} className="text-center text-white font-">
                 <div
                   className="relative bg-black"
                   style={{
@@ -204,29 +197,6 @@ const ActivityDetail = () => {
                 <p className="mt-2 font-medium text-center">{image.caption}</p>
               </div>
             ))}
-          </div>
-        </div>
-
-        {/* Comments Section */}
-        <div>
-          <h4 className="text-lg font-bold mb-4">Comentários:</h4>
-
-          <div className="space-y-4 mb-6">
-            {activity.comments.map((comment) => (
-              <div key={comment.id} className="border-b border-gray-200 pb-3">
-                <p className="font-semibold">{comment.author}:</p>
-                <p>{comment.text}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex justify-end">
-            <button
-              className="bg-red_secondary hover:bg-opacity-90 text-white px-4 py-2 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red_secondary"
-              onClick={handleAddComment}
-            >
-              ADICIONAR NOVO COMENTÁRIO
-            </button>
           </div>
         </div>
       </div>

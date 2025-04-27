@@ -1,27 +1,32 @@
-import { Outlet } from "react-router-dom";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import peridentalLogo from "../assets/imgs/logo/peridentalLogo.svg";
+import { Question, UserCircle } from "@phosphor-icons/react";
+import { useAuth } from "../contexts/useAuth";
 
-const Layout = () => {
+const Layout = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user, signOut, hasPermission } = useAuth();
 
-  // Simula dados do usuário logado
-  const user = {
-    name: "Carlos",
-    id: "#0000",
+  const getPageTitle = () => {
+    if (location.pathname.includes("/users")) return "GESTÃO DE ACESSO";
+    if (location.pathname.match(/\/cases\/\d+/)) return "CASO DETALHADO";
+    if (location.pathname === "/cases/add") return "NOVOS CASOS";
+    if (location.pathname === "/evidences") return "EVIDÊNCIAS";
+    if (location.pathname === "/reports") return "LAUDOS";
+    if (location.pathname === "/dashboard") return "VISÃO GERAL";
+    return "GESTÃO ODONTO-LEGAL";
   };
 
-  // Função para logout
   const handleLogout = () => {
-    localStorage.removeItem("user");
+    signOut();
     navigate("/login");
   };
 
   return (
     <div className="flex flex-col h-screen">
       {/* Header */}
-      <header className="bg-blue_secondary text-white py-2 px-6 flex justify-between items-center">
+      <header className="bg-blue_quaternary text-white py-2 px-6 flex justify-between items-center">
         <div className="flex items-center">
           <img
             src={peridentalLogo}
@@ -31,15 +36,10 @@ const Layout = () => {
           <h1 className="text-2xl font-bold">Peridental</h1>
         </div>
         <div className="text-center">
-          {location.pathname.includes("/admin/users") ? (
-            <h2 className="text-xl font-bold">GESTÃO DE ACESSO</h2>
-          ) : location.pathname.match(/\/cases\/\d+/) ? (
-            <h2 className="text-xl font-bold">CASO DETALHADO</h2>
-          ) : location.pathname === "/cases/add" ? (
-            <h2 className="text-xl font-bold">NOVOS CASOS</h2>
-          ) : (
-            <h2 className="text-xl font-bold">GESTÃO ODONTO-LEGAL</h2>
-          )}
+          <h2 className="text-xl font-bold">{getPageTitle()}</h2>
+        </div>
+        <div className="text-center absolute right-8 cursor-pointer">
+          <Question size={32} className="text-white hover:text-blue_dark" />
         </div>
         <div className="w-[200px]">
           {/* Espaço vazio para manter o alinhamento */}
@@ -50,11 +50,18 @@ const Layout = () => {
         {/* Sidebar */}
         <aside className="w-64 bg-white border-r border-gray-200 p-4">
           <div className="flex justify-between items-center mb-2">
-            <div>
-              <p className="font-medium text-gray_primary">
-                Bem vindo, {user.name}
-              </p>
-              <p className="text-sm text-gray_primary">{user.id}</p>
+            <div className="flex items-center">
+              <UserCircle size={32} className="text-gray_primary mr-2" />
+              <div>
+                <p className="font-medium text-gray_primary">{user?.name}</p>
+                <p className="text-sm text-gray_primary">
+                  {user?.role === "admin"
+                    ? "Administrador"
+                    : user?.role === "perito"
+                    ? "Perito"
+                    : "Assistente"}
+                </p>
+              </div>
             </div>
             <button
               className="text-sm text-red_secondary font-medium hover:underline"
@@ -63,12 +70,6 @@ const Layout = () => {
               Sair
             </button>
           </div>
-          <a
-            href="#"
-            className="text-sm text-gray_primary hover:text-blue_secondary block mb-4"
-          >
-            Alterar informações
-          </a>
 
           <nav className="mt-6">
             <ul className="space-y-2">
@@ -88,70 +89,84 @@ const Layout = () => {
                   Visão Geral
                 </Link>
               </li>
-              <li
-                className={`border-b border-gray-200 py-2 ${
-                  location.pathname === "/cases" ? "bg-blue-50" : ""
-                }`}
-              >
-                <Link
-                  to="/cases"
-                  className={`block transition-colors duration-200 ${
-                    location.pathname === "/cases"
-                      ? "text-blue_secondary font-medium"
-                      : "text-gray_primary hover:text-blue_secondary"
+
+              {hasPermission("view_cases") && (
+                <li
+                  className={`border-b border-gray-200 py-2 ${
+                    location.pathname === "/cases" ? "bg-blue-50" : ""
                   }`}
                 >
-                  Gestão de Casos
-                </Link>
-              </li>
-              <li
-                className={`border-b border-gray-200 py-2 ${
-                  location.pathname === "/reports" ? "bg-blue-50" : ""
-                }`}
-              >
-                <Link
-                  to="/reports"
-                  className={`block transition-colors duration-200 ${
-                    location.pathname === "/reports"
-                      ? "text-blue_secondary font-medium"
-                      : "text-gray_primary hover:text-blue_secondary"
+                  <Link
+                    to="/cases"
+                    className={`block transition-colors duration-200 ${
+                      location.pathname === "/cases"
+                        ? "text-blue_secondary font-medium"
+                        : "text-gray_primary hover:text-blue_secondary"
+                    }`}
+                  >
+                    Gestão de Casos
+                  </Link>
+                </li>
+              )}
+
+              {hasPermission("view_evidences") && (
+                <li
+                  className={`border-b border-gray-200 py-2 ${
+                    location.pathname === "/evidences" ? "bg-blue-50" : ""
                   }`}
                 >
-                  Geração de Laudos Periciais
-                </Link>
-              </li>
-              <li
-                className={`border-b border-gray-200 py-2 ${
-                  location.pathname.includes("/admin/users") ? "bg-blue-50" : ""
-                }`}
-              >
-                <Link
-                  to="/admin/users"
-                  className={`block transition-colors duration-200 ${
+                  <Link
+                    to="/evidences"
+                    className={`block transition-colors duration-200 ${
+                      location.pathname === "/evidences"
+                        ? "text-blue_secondary font-medium"
+                        : "text-gray_primary hover:text-blue_secondary"
+                    }`}
+                  >
+                    Evidências
+                  </Link>
+                </li>
+              )}
+
+              {hasPermission("view_reports") && (
+                <li
+                  className={`border-b border-gray-200 py-2 ${
+                    location.pathname === "/reports" ? "bg-blue-50" : ""
+                  }`}
+                >
+                  <Link
+                    to="/reports"
+                    className={`block transition-colors duration-200 ${
+                      location.pathname === "/reports"
+                        ? "text-blue_secondary font-medium"
+                        : "text-gray_primary hover:text-blue_secondary"
+                    }`}
+                  >
+                    Laudos
+                  </Link>
+                </li>
+              )}
+
+              {hasPermission("manage_users") && (
+                <li
+                  className={`border-b border-gray-200 py-2 ${
                     location.pathname.includes("/admin/users")
-                      ? "text-blue_secondary font-medium"
-                      : "text-gray_primary hover:text-blue_secondary"
+                      ? "bg-blue-50"
+                      : ""
                   }`}
                 >
-                  Gestão de Acesso
-                </Link>
-              </li>
-              <li
-                className={`border-b border-gray-200 py-2 ${
-                  location.pathname === "/evidences" ? "bg-blue-50" : ""
-                }`}
-              >
-                <Link
-                  to="/evidences"
-                  className={`block transition-colors duration-200 ${
-                    location.pathname === "/evidences"
-                      ? "text-blue_secondary font-medium"
-                      : "text-gray_primary hover:text-blue_secondary"
-                  }`}
-                >
-                  Evidências
-                </Link>
-              </li>
+                  <Link
+                    to="/admin/users"
+                    className={`block transition-colors duration-200 ${
+                      location.pathname.includes("/admin/users")
+                        ? "text-blue_secondary font-medium"
+                        : "text-gray_primary hover:text-blue_secondary"
+                    }`}
+                  >
+                    Gestão de Acesso
+                  </Link>
+                </li>
+              )}
             </ul>
           </nav>
         </aside>
@@ -159,9 +174,7 @@ const Layout = () => {
         {/* Main Content */}
         <main className="flex-1 flex flex-col bg-[#fbfbfb]">
           {/* Content */}
-          <div className="flex-1 overflow-auto">
-            <Outlet />
-          </div>
+          <div className="flex-1 overflow-auto">{children}</div>
         </main>
       </div>
     </div>

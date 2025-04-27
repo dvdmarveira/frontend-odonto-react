@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import SearchBar from "../components/SearchBar";
+import SearchBar from "../../components/SearchBar";
 
 const Evidences = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -18,8 +18,8 @@ const Evidences = () => {
           Gerenciamento de Evidências
         </h2>
         <p className="text-gray-600 mb-6">
-          Esta página permite o gerenciamento de evidências odontológicas
-          relacionadas aos casos.
+          Esta página permite o gerenciamento de todas as evidências
+          odontológicas relacionadas aos casos.
         </p>
 
         <div className="flex justify-center items-center h-60 bg-gray-100 rounded-lg border border-dashed border-gray-300">

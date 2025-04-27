@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { CaretDown } from "@phosphor-icons/react";
-import imgSheila from "../assets/imgs/photos-users/sheila.svg";
-import SearchBar from "../components/SearchBar";
+import imgSheila from "../../assets/imgs/photos-users/sheila.svg";
+import SearchBar from "../../components/SearchBar";
 
 const UserManagDetail = () => {
   const { userId } = useParams();

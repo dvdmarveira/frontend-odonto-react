@@ -161,19 +161,19 @@ const CaseDetail = () => {
       <div className="flex justify-between mb-8">
         <button
           onClick={handleEditCase}
-          className="bg-blue_dark hover:bg-blue_primary text-white font-bold py-2 px-6 rounded-full"
+          className="bg-blue_dark hover:bg-blue_primary text-white font-bold py-2 px-6 rounded-md"
         >
           EDITAR CASO
         </button>
         <button
           onClick={handleDeleteCase}
-          className="bg-blue_dark hover:bg-blue_primary text-white font-bold py-2 px-6 rounded-full"
+          className="bg-blue_dark hover:bg-blue_primary text-white font-bold py-2 px-6 rounded-md"
         >
           EXCLUIR CASO
         </button>
         <button
           onClick={handleDownloadReport}
-          className="bg-blue_dark hover:bg-blue_primary text-white font-bold py-2 px-6 rounded-full"
+          className="bg-blue_dark hover:bg-blue_primary text-white font-bold py-2 px-6 rounded-md"
         >
           BAIXAR RELATÓRIO
         </button>
@@ -185,7 +185,7 @@ const CaseDetail = () => {
           Caso Pericial N° {caseData.id} - {caseData.title}
         </h2>
 
-        <div className="grid grid-cols-2 gap-4 text-sm">
+        <div className="grid grid-cols-1 text-sm">
           <div>
             <p>
               <span className="font-bold">Status Atual:</span> {caseData.status}
@@ -214,7 +214,7 @@ const CaseDetail = () => {
         <h3 className="text-lg font-bold mb-3">Informações Gerais do Caso</h3>
         <p className="text-gray-700 mb-4">{caseData.generalInfo}</p>
 
-        <div className="grid grid-cols-2 gap-4 mt-4">
+        <div className="grid grid-cols-1 mt-4">
           <div>
             <p>
               <span className="font-bold">Local de Ocorrência:</span>{" "}
@@ -242,7 +242,7 @@ const CaseDetail = () => {
           <h3 className="text-lg font-bold">Evidências Vinculadas ao Caso</h3>
           <button
             onClick={handleAddEvidence}
-            className="bg-blue_dark hover:bg-blue_primary text-white font-bold py-2 px-6 rounded-full flex items-center"
+            className="bg-blue_dark hover:bg-blue_primary text-white font-bold py-2 px-6 rounded-md flex items-center"
           >
             <Plus size={18} className="mr-2" />
             ADICIONAR EVIDÊNCIA
@@ -324,7 +324,7 @@ const CaseDetail = () => {
           <h3 className="text-lg font-bold">Laudos e Documentação</h3>
           <button
             onClick={handleAddDocument}
-            className="bg-blue_dark hover:bg-blue_primary text-white font-bold py-2 px-6 rounded-full flex items-center"
+            className="bg-blue_dark hover:bg-blue_primary text-white font-bold py-2 px-6 rounded-md flex items-center"
           >
             <Plus size={18} className="mr-2" />
             ADICIONAR
