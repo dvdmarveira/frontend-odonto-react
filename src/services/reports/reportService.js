@@ -3,37 +3,70 @@ import api from "../api/axios.config";
 class ReportService {
   async createReport(reportData) {
     try {
-      const formData = new FormData();
-
-      // Mapear campos corretamente
-      formData.append("case", reportData.case);
-      formData.append("title", reportData.title);
-      formData.append("content", reportData.content);
-      formData.append("type", reportData.type);
-      formData.append("status", reportData.status || "rascunho");
-
-      // Adicionar anexos se existirem
-      if (reportData.attachments && reportData.attachments.length > 0) {
-        reportData.attachments.forEach((file) => {
-          formData.append("files", file);
-        });
+      // Validar campos obrigatórios conforme schema do backend
+      if (
+        !reportData.case ||
+        !reportData.title ||
+        !reportData.content ||
+        !reportData.type
+      ) {
+        throw new Error("Campos obrigatórios: case, title, content e type");
       }
 
-      const response = await api.post("/api/reports", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      // Validar tipo conforme enum do backend
+      const validTypes = [
+        "laudo_pericial",
+        "relatorio_tecnico",
+        "parecer_odontologico",
+      ];
+      if (!validTypes.includes(reportData.type)) {
+        throw new Error(
+          `Tipo inválido. Deve ser um dos seguintes: ${validTypes.join(", ")}`
+        );
+      }
+
+      // Criar objeto com dados conforme esperado pelo backend
+      const data = {
+        case: reportData.case,
+        title: reportData.title,
+        content: reportData.content,
+        type: reportData.type,
+        status: reportData.status || "rascunho",
+      };
+
+      let response;
+
+      // Se houver arquivos, usar FormData
+      if (reportData.files && reportData.files.length > 0) {
+        const formData = new FormData();
+
+        // Adicionar dados do report
+        Object.keys(data).forEach((key) => {
+          formData.append(key, data[key]);
+        });
+
+        // Adicionar arquivos
+        reportData.files.forEach((file) => {
+          formData.append("files", file);
+        });
+
+        response = await api.post("/api/reports", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+      } else {
+        // Se não houver arquivos, enviar como JSON
+        response = await api.post("/api/reports", data);
+      }
 
       return {
         success: true,
-        data: response.data.data,
+        data: response.data,
       };
     } catch (error) {
       console.error("Erro ao criar relatório:", error);
       return {
         success: false,
-        error: error.response?.data?.message || "Erro ao criar laudo",
+        error: error.response?.data?.message || error.message,
       };
     }
   }

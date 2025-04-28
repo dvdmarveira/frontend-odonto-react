@@ -19,10 +19,16 @@ const TIPOS_EVIDENCIA = [
   "Fotografia Intraoral",
 ];
 
+const TIPOS_DOCUMENTO_BACKEND = {
+  "Laudo Pericial": "laudo_pericial",
+  "Relatório Técnico": "relatorio_tecnico",
+  "Parecer Odontológico": "parecer_odontologico",
+};
+
 const TIPOS_DOCUMENTO = [
-  "laudo_pericial",
-  "relatorio_tecnico",
-  "parecer_odontologico",
+  "Laudo Pericial",
+  "Relatório Técnico",
+  "Parecer Odontológico",
 ];
 
 const AddCase = () => {
@@ -273,26 +279,58 @@ const AddCase = () => {
 
       // 4. Criar documentos/laudos
       const documentPromises = documentos.map(async (documento) => {
-        const reportData = {
-          case: caseId, // ID do caso
-          title: documento.tipo,
-          content: documento.informacoes || "",
-          type: documento.tipo,
-          status: documento.status || "rascunho",
-          attachments: documento.uploads || [],
-        };
+        try {
+          const reportData = {
+            case: caseId,
+            title: documento.tipo,
+            content: documento.informacoes,
+            type: TIPOS_DOCUMENTO_BACKEND[documento.tipo],
+            status: documento.status || "rascunho",
+          };
 
-        console.log("Dados do documento a serem enviados:", reportData);
-        const reportResponse = await ReportService.createReport(reportData);
+          // Se houver arquivos, adicioná-los separadamente
+          if (documento.uploads && documento.uploads.length > 0) {
+            reportData.files = documento.uploads;
+          }
 
-        if (!reportResponse.success) {
-          throw new Error(`Erro ao criar laudo: ${reportResponse.error}`);
+          console.log("Dados do documento a serem enviados:", {
+            tipo_original: documento.tipo,
+            tipo_mapeado: TIPOS_DOCUMENTO_BACKEND[documento.tipo],
+            dados_completos: reportData,
+          });
+
+          const reportResponse = await ReportService.createReport(reportData);
+
+          if (!reportResponse.success) {
+            console.error(
+              "Erro detalhado do ReportService:",
+              reportResponse.error
+            );
+            throw new Error(reportResponse.error || "Erro ao criar laudo");
+          }
+
+          return reportResponse;
+        } catch (error) {
+          console.error("Erro completo ao criar laudo:", {
+            error,
+            stack: error.stack,
+            response: error.response?.data,
+          });
+          throw error;
         }
-        return reportResponse;
       });
 
       // 5. Aguardar todas as operações
-      await Promise.all([...evidencePromises, ...documentPromises]);
+      const results = await Promise.all([
+        ...evidencePromises,
+        ...documentPromises,
+      ]);
+
+      // Verificar se houve algum erro
+      const errors = results.filter((r) => !r.success);
+      if (errors.length > 0) {
+        throw new Error(errors[0].error);
+      }
 
       toast.success("Caso criado com sucesso!");
       navigate(`/cases/${caseId}`);
@@ -595,8 +633,8 @@ const AddCase = () => {
                 disabled={loading}
               >
                 <option value="Selecionar">Selecionar</option>
-                {TIPOS_DOCUMENTO.map((tipo, index) => (
-                  <option key={`tipo-documento-${index}-${tipo}`} value={tipo}>
+                {TIPOS_DOCUMENTO.map((tipo) => (
+                  <option key={tipo} value={tipo}>
                     {tipo}
                   </option>
                 ))}
