@@ -114,13 +114,52 @@ const Cases = () => {
   const handleViewCase = async (caseId) => {
     try {
       setIsLoading(true);
+
+      // Validar o ID antes de fazer a requisição
+      if (!caseId) {
+        toast.error("ID do caso não fornecido");
+        return;
+      }
+
+      // Garantir que estamos usando o ID correto (pode ser _id ou id)
+      const validId = caseId.toString().match(/^[0-9a-fA-F]{22,24}$/);
+      if (!validId) {
+        console.error("ID inválido:", caseId);
+        toast.error("ID do caso em formato inválido");
+        return;
+      }
+
+      console.log("Iniciando visualização do caso:", caseId);
+
       const response = await CaseService.getCaseById(caseId);
+      console.log("Resposta do serviço:", response);
 
       if (response.success) {
         setSelectedCase(response.data);
         setIsModalOpen(true);
       } else {
-        toast.error(response.error || "Erro ao carregar detalhes do caso");
+        console.error("Erro na resposta:", response);
+
+        // Log detalhado dos erros
+        if (response.details) {
+          console.error("Detalhes do erro:", {
+            message: response.error,
+            details: response.details,
+            validation: response.validation,
+          });
+        }
+
+        // Mensagem de erro mais amigável
+        const errorMessage =
+          response.error || "Erro ao carregar detalhes do caso";
+        toast.error(errorMessage);
+
+        // Se houver erros de validação, mostrar cada um deles
+        if (response.validation) {
+          Object.values(response.validation).forEach((error) => {
+            toast.error(error);
+          });
+        }
       }
     } catch (error) {
       console.error("Erro ao carregar detalhes do caso:", error);

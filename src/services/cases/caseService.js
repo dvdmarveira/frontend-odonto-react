@@ -76,6 +76,18 @@ class CaseService {
 
       const response = await api.get(`/api/cases?${queryParams}`);
 
+      // Log para debug dos IDs
+      if (response.data?.data?.cases) {
+        console.log(
+          "IDs dos casos retornados:",
+          response.data.data.cases.map((c) => ({
+            _id: c._id,
+            id: c.id,
+            length: (c._id || c.id || "").length,
+          }))
+        );
+      }
+
       // Garantir que a resposta está no formato esperado
       return {
         success: true,
@@ -123,20 +135,94 @@ class CaseService {
     }
   }
 
-  async getCaseById(caseId) {
+  async getCaseById(id) {
     try {
-      const response = await api.get(`/api/cases/${caseId}`);
-      const caseData = response.data.data;
+      // Validação do ID
+      if (!id) {
+        throw new Error("ID do caso não fornecido");
+      }
+
+      // Validar formato do ID (24 caracteres hexadecimais)
+      const idRegex = /^[0-9a-fA-F]{24}$/;
+      if (!idRegex.test(id)) {
+        throw new Error(
+          "Formato de ID inválido. É necessário um ID de 24 caracteres hexadecimais."
+        );
+      }
+
+      console.log("Buscando caso com ID:", id);
+
+      const response = await api.get(`/api/cases/${id}`);
+      console.log("Resposta do servidor:", response);
+
+      if (!response.data) {
+        throw new Error("Resposta do servidor sem dados");
+      }
+
+      if (!response.data.data) {
+        throw new Error("Dados do caso não encontrados na resposta");
+      }
+
+      // Log dos dados recebidos
+      console.log("Dados recebidos do servidor:", response.data);
+
+      // Mapear os dados usando o método existente
+      const mappedCase = this.mapCaseData(response.data.data);
+      console.log("Dados mapeados:", mappedCase);
+
+      // Adicionar dados extras que podem ser necessários para o modal
+      const extraData = {
+        evidences: response.data.data.evidences || [],
+        reports: response.data.data.reports || [],
+        historico: response.data.data.historico,
+        analises: response.data.data.analises,
+        data: response.data.data.data,
+      };
 
       return {
         success: true,
-        data: this.mapCaseData(caseData),
+        data: {
+          ...mappedCase,
+          ...extraData,
+        },
+        message: response.data.message,
       };
     } catch (error) {
-      console.error("Erro detalhado:", error);
+      console.error("Erro ao buscar caso:", error);
+
+      // Se for erro de validação do ID
+      if (error.message.includes("Formato de ID inválido")) {
+        return {
+          success: false,
+          error: error.message,
+          details: {
+            validation: {
+              id: "O ID fornecido não está no formato correto do MongoDB (24 caracteres hexadecimais)",
+            },
+          },
+        };
+      }
+
+      console.error("Detalhes do erro:", {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message,
+        errors: error.response?.data?.errors || [],
+        validation: error.response?.data?.validation || {},
+      });
+
+      // Mensagem de erro mais específica baseada na resposta
+      const errorMessage =
+        error.response?.data?.message ||
+        error.response?.data?.errors?.[0] ||
+        error.message ||
+        "Erro ao buscar caso";
+
       return {
         success: false,
-        error: error.response?.data?.message || "Erro ao buscar caso",
+        error: errorMessage,
+        details: error.response?.data,
+        validation: error.response?.data?.validation || {},
       };
     }
   }
@@ -273,8 +359,24 @@ class CaseService {
   }
 
   mapCaseData(caso) {
-    return {
-      id: caso._id,
+    if (!caso) {
+      console.error("Dados do caso indefinidos");
+      return null;
+    }
+
+    // Log para debug
+    console.log("Dados originais do caso para mapeamento:", caso);
+
+    // Verificar formato do ID
+    const id = caso._id || caso.id;
+    if (!id) {
+      console.error("Caso sem ID:", caso);
+    } else if (id.length !== 24) {
+      console.warn(`ID com formato incorreto (${id.length} caracteres):`, id);
+    }
+
+    const mappedData = {
+      id: id, // Usar o ID verificado
       title: caso.title,
       description: caso.description,
       type: caso.type,
@@ -284,6 +386,11 @@ class CaseService {
       createdAt: caso.createdAt,
       updatedAt: caso.updatedAt,
     };
+
+    // Log para debug
+    console.log("Dados mapeados do caso:", mappedData);
+
+    return mappedData;
   }
 
   calculateStats(cases) {
