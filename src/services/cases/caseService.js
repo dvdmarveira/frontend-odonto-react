@@ -1,6 +1,20 @@
 import api from "../api/axios.config";
 
 class CaseService {
+  // Adicionar as constantes como propriedades estáticas da classe
+  static DEFAULT_STATS = {
+    emAndamento: 0,
+    arquivados: 0,
+    finalizados: 0,
+  };
+
+  static DEFAULT_PAGINATION = {
+    currentPage: 1,
+    totalPages: 1,
+    total: 0,
+    pages: 1,
+  };
+
   async createCase(caseData) {
     try {
       // Validar campos obrigatórios
@@ -51,14 +65,29 @@ class CaseService {
     return typeMap[frontendType] || frontendType;
   }
 
-  async getCases() {
+  async getCases(filters = {}, page = 1) {
     try {
-      const response = await api.get("/api/cases");
+      // Construir query string com filtros e paginação
+      const queryParams = new URLSearchParams({
+        page: page,
+        limit: 10,
+        ...filters,
+      }).toString();
+
+      const response = await api.get(`/api/cases?${queryParams}`);
+
+      // Garantir que a resposta está no formato esperado
       return {
         success: true,
-        data: response.data.data,
+        data: {
+          cases: response.data.data.cases || [],
+          stats: response.data.data.stats || CaseService.DEFAULT_STATS,
+          pagination:
+            response.data.data.pagination || CaseService.DEFAULT_PAGINATION,
+        },
       };
     } catch (error) {
+      console.error("Erro ao buscar casos:", error);
       return {
         success: false,
         error: error.response?.data?.message || "Erro ao buscar casos",
