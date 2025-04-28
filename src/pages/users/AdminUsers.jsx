@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Gear } from "@phosphor-icons/react";
+import { Gear, MagnifyingGlass } from "@phosphor-icons/react";
 import SearchBar from "../../components/SearchBar";
 
 const AdminUsers = () => {
@@ -69,28 +69,42 @@ const AdminUsers = () => {
 
   return (
     <div className="p-6">
-      {/* Search Bar */}
-      <SearchBar
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-      />
+      {/* Cabeçalho e Search Bar */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-blue_dark mb-6">Usuários</h1>
+        <div className="flex items-center gap-4 bg-white p-4 rounded-xl shadow-md">
+          <div className="flex-1 relative">
+            <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+              <MagnifyingGlass size={20} className="text-gray-400" />
+            </div>
+            <input
+              type="text"
+              placeholder="Buscar por nome ou função..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:border-blue_primary"
+            />
+          </div>
+        </div>
+      </div>
 
       {isLoading ? (
         <div className="text-center py-8">
-          <p>Carregando usuários...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue_primary mx-auto"></div>
+          <p className="mt-4 text-gray-600">Carregando usuários...</p>
         </div>
       ) : filteredUsers.length === 0 ? (
         <div className="text-center py-8">
-          <p>Nenhum usuário encontrado.</p>
+          <p className="text-gray-600">Nenhum usuário encontrado.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredUsers.map((user) => (
             <div
               key={user.id}
-              className="bg-blue_secondary rounded-lg p-6 flex flex-col items-center relative"
+              className="bg-blue_secondary rounded-lg p-6 flex flex-col items-center relative hover:shadow-lg transition-shadow"
             >
-              <button className="absolute top-2 right-2 text-white">
+              <button className="absolute top-2 right-2 text-white hover:text-gray-200 transition-colors">
                 <Gear size={24} />
               </button>
 

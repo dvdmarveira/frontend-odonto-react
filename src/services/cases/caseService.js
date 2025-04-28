@@ -153,7 +153,8 @@ class CaseService {
       console.log("Buscando caso com ID:", id);
 
       const response = await api.get(`/api/cases/${id}`);
-      console.log("Resposta do servidor:", response);
+      console.log("Resposta completa do servidor:", response.data);
+      console.log("Dados do paciente:", response.data.data.patient);
 
       if (!response.data) {
         throw new Error("Resposta do servidor sem dados");
@@ -163,28 +164,14 @@ class CaseService {
         throw new Error("Dados do caso não encontrados na resposta");
       }
 
-      // Log dos dados recebidos
-      console.log("Dados recebidos do servidor:", response.data);
-
       // Mapear os dados usando o método existente
       const mappedCase = this.mapCaseData(response.data.data);
-      console.log("Dados mapeados:", mappedCase);
-
-      // Adicionar dados extras que podem ser necessários para o modal
-      const extraData = {
-        evidences: response.data.data.evidences || [],
-        reports: response.data.data.reports || [],
-        historico: response.data.data.historico,
-        analises: response.data.data.analises,
-        data: response.data.data.data,
-      };
+      console.log("Dados mapeados do caso:", mappedCase);
+      console.log("Paciente nos dados mapeados:", mappedCase.patient);
 
       return {
         success: true,
-        data: {
-          ...mappedCase,
-          ...extraData,
-        },
+        data: mappedCase,
         message: response.data.message,
       };
     } catch (error) {
@@ -203,26 +190,12 @@ class CaseService {
         };
       }
 
-      console.error("Detalhes do erro:", {
-        status: error.response?.status,
-        data: error.response?.data,
-        message: error.message,
-        errors: error.response?.data?.errors || [],
-        validation: error.response?.data?.validation || {},
-      });
-
-      // Mensagem de erro mais específica baseada na resposta
-      const errorMessage =
-        error.response?.data?.message ||
-        error.response?.data?.errors?.[0] ||
-        error.message ||
-        "Erro ao buscar caso";
-
       return {
         success: false,
-        error: errorMessage,
-        details: error.response?.data,
-        validation: error.response?.data?.validation || {},
+        error:
+          error.response?.data?.message ||
+          error.message ||
+          "Erro ao buscar caso",
       };
     }
   }
@@ -359,38 +332,26 @@ class CaseService {
   }
 
   mapCaseData(caso) {
-    if (!caso) {
-      console.error("Dados do caso indefinidos");
-      return null;
-    }
+    if (!caso) return null;
 
-    // Log para debug
-    console.log("Dados originais do caso para mapeamento:", caso);
-
-    // Verificar formato do ID
-    const id = caso._id || caso.id;
-    if (!id) {
-      console.error("Caso sem ID:", caso);
-    } else if (id.length !== 24) {
-      console.warn(`ID com formato incorreto (${id.length} caracteres):`, id);
-    }
-
-    const mappedData = {
-      id: id, // Usar o ID verificado
+    return {
+      id: caso._id,
       title: caso.title,
       description: caso.description,
       type: caso.type,
       status: caso.status,
       responsible: caso.responsible,
       createdBy: caso.createdBy,
+      patient: caso.patient,
       createdAt: caso.createdAt,
       updatedAt: caso.updatedAt,
+      updatedBy: caso.updatedBy,
+      evidences: caso.evidences || [],
+      reports: caso.reports || [],
+      historico: caso.historico,
+      analises: caso.analises,
+      data: caso.data,
     };
-
-    // Log para debug
-    console.log("Dados mapeados do caso:", mappedData);
-
-    return mappedData;
   }
 
   calculateStats(cases) {

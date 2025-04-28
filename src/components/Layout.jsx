@@ -15,6 +15,7 @@ const Layout = ({ children }) => {
     if (location.pathname === "/evidences") return "EVIDÊNCIAS";
     if (location.pathname === "/reports") return "LAUDOS";
     if (location.pathname === "/dashboard") return "VISÃO GERAL";
+    if (location.pathname === "/patients") return "PACIENTES";
     return "GESTÃO ODONTO-LEGAL";
   };
 
@@ -105,6 +106,25 @@ const Layout = ({ children }) => {
                     }`}
                   >
                     Gestão de Casos
+                  </Link>
+                </li>
+              )}
+
+              {hasPermission("view_patients") && (
+                <li
+                  className={`border-b border-gray-200 py-2 ${
+                    location.pathname === "/patients" ? "bg-blue-50" : ""
+                  }`}
+                >
+                  <Link
+                    to="/patients"
+                    className={`block transition-colors duration-200 ${
+                      location.pathname === "/patients"
+                        ? "text-blue_secondary font-medium"
+                        : "text-gray_primary hover:text-blue_secondary"
+                    }`}
+                  >
+                    Pacientes
                   </Link>
                 </li>
               )}

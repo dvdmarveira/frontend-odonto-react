@@ -38,6 +38,9 @@ import Cases from "../pages/cases/Cases";
 import CaseDetail from "../pages/cases/CaseDetail";
 import AddCase from "../pages/cases/AddCase";
 
+// Pacientes
+import Patients from "../pages/patients/Patients";
+
 // Evidências
 import Evidences from "../pages/evidences/Evidences";
 
@@ -143,6 +146,16 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute roles={["admin", "perito"]}>
             <AddCase />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Pacientes */}
+      <Route
+        path="/patients"
+        element={
+          <ProtectedRoute>
+            <Patients />
           </ProtectedRoute>
         }
       />

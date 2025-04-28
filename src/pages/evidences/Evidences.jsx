@@ -7,14 +7,18 @@ import {
   Eye,
 } from "@phosphor-icons/react";
 import evidenceService from "../../services/evidences/evidenceService";
+import CaseService from "../../services/cases/caseService";
 import { toast } from "react-toastify";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import CaseDetailModal from "../../components/modals/CaseDetailModal";
 
 const Evidences = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [evidences, setEvidences] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedCase, setSelectedCase] = useState(null);
+  const [isCaseModalOpen, setIsCaseModalOpen] = useState(false);
 
   useEffect(() => {
     loadEvidences();
@@ -25,6 +29,7 @@ const Evidences = () => {
       setLoading(true);
       const { success, data, error } = await evidenceService.getEvidences();
       if (success) {
+        console.log("Evidências carregadas:", data);
         setEvidences(data);
       } else {
         toast.error(error || "Erro ao carregar evidências");
@@ -42,6 +47,71 @@ const Evidences = () => {
       return format(new Date(data), "dd/MM/yyyy", { locale: ptBR });
     } catch (error) {
       return "Data inválida";
+    }
+  };
+
+  const handleViewCase = async (caseId) => {
+    try {
+      setLoading(true);
+      console.log("ID do caso recebido:", caseId);
+
+      if (!caseId) {
+        toast.error("Caso não encontrado para esta evidência");
+        return;
+      }
+
+      // Se o caseId for um objeto, tenta pegar o _id
+      const id = typeof caseId === "object" ? caseId?._id : caseId;
+      console.log("ID processado:", id);
+
+      if (!id) {
+        toast.error("ID do caso não encontrado");
+        return;
+      }
+
+      // Validar o formato do ID
+      const validId = id.toString().match(/^[0-9a-fA-F]{24}$/);
+      if (!validId) {
+        console.error("ID inválido:", id);
+        toast.error("ID do caso em formato inválido");
+        return;
+      }
+
+      const response = await CaseService.getCaseById(id);
+      console.log("Resposta do serviço:", response);
+
+      if (response.success) {
+        setSelectedCase(response.data);
+        setIsCaseModalOpen(true);
+      } else {
+        console.error("Erro na resposta:", response);
+
+        // Log detalhado dos erros
+        if (response.details) {
+          console.error("Detalhes do erro:", {
+            message: response.error,
+            details: response.details,
+            validation: response.validation,
+          });
+        }
+
+        // Mensagem de erro mais amigável
+        const errorMessage =
+          response.error || "Erro ao carregar detalhes do caso";
+        toast.error(errorMessage);
+
+        // Se houver erros de validação, mostrar cada um deles
+        if (response.validation) {
+          Object.values(response.validation).forEach((error) => {
+            toast.error(error);
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Erro ao carregar detalhes do caso:", error);
+      toast.error("Erro ao carregar detalhes do caso");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -163,9 +233,16 @@ const Evidences = () => {
                     )}
                   </td>
                   <td className="py-4 px-6 text-right">
-                    <button className="bg-[#DC3545] hover:bg-opacity-80 text-white px-4 py-2 rounded-full inline-flex items-center">
+                    <button
+                      onClick={() => {
+                        console.log("Evidência completa:", evidence);
+                        console.log("Case da evidência:", evidence.case);
+                        handleViewCase(evidence.case);
+                      }}
+                      className="bg-[#DC3545] hover:bg-opacity-80 text-white px-4 py-2 rounded-full inline-flex items-center"
+                    >
                       <Eye size={16} className="mr-2" />
-                      Visualizar
+                      Visualizar Caso
                     </button>
                   </td>
                 </tr>
@@ -174,6 +251,16 @@ const Evidences = () => {
           </table>
         </div>
       )}
+
+      {/* Case Detail Modal */}
+      <CaseDetailModal
+        isOpen={isCaseModalOpen}
+        onClose={() => {
+          setIsCaseModalOpen(false);
+          setSelectedCase(null);
+        }}
+        caseData={selectedCase}
+      />
     </div>
   );
 };
