@@ -7,6 +7,8 @@ import {
   Trash,
   Plus,
 } from "@phosphor-icons/react";
+import { toast } from "react-hot-toast";
+import CaseService from "../../services/cases/caseService";
 
 const CaseDetail = () => {
   const { caseId } = useParams();
@@ -16,109 +18,41 @@ const CaseDetail = () => {
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    // Simulando carregamento de dados da API
-    setTimeout(() => {
-      const mockCaseData = {
-        id: caseId || "045",
-        title: "Identificação de Indivíduo Desconhecido",
-        status: "Em Andamento",
-        openDate: "12/03/2023",
-        openTime: "21:56:28",
-        expert: "Dr. Marcos Almeida",
-        type: "Identificação Odonto-Legal",
-        generalInfo:
-          "Um corpo foi encontrado em avançado estado de decomposição em uma área rural nos arredores de Recife. Como não havia documentos ou qualquer outro meio de identificação imediato, a perícia odontológica foi solicitada para comparar os registros dentários com bancos de dados forenses.",
-        occurrence: {
-          location: "Zona rural de Recife, PE",
-          discoveryDate: "12/01/2023",
-          history:
-            "Testemunhas afirmam que a vítima pode estar desaparecida há pelo menos duas semanas.",
-        },
-        evidences: [
-          {
-            id: 1,
-            caseNumber: "045",
-            description: "RX Panorâmico da Arcada Superior e Inferior",
-            date: "10/03/2024",
-          },
-          {
-            id: 2,
-            caseNumber: "045",
-            description: "Depoimento de Maria Eduardo Alves",
-            date: "12/01/2023",
-          },
-          {
-            id: 3,
-            caseNumber: "045",
-            description: "RX Comparativo com Registros de Banco de Dados",
-            date: "04/12/2024",
-          },
-          {
-            id: 4,
-            caseNumber: "045",
-            description: "Relato do Perito Bruno Silva",
-            date: "20/10/2024",
-          },
-        ],
-        analyses: [
-          {
-            id: 1,
-            description:
-              "Comparação da arcada dentária com registros de desaparecidos nos últimos 3 meses",
-            date: "16/03/2025",
-          },
-          {
-            id: 2,
-            description:
-              "Análise de correspondência com prontuários odontológicos enviados por familiares",
-            date: "16/03/2025",
-          },
-          {
-            id: 3,
-            description: "Consulta ao Banco Nacional Odonto-Legal",
-            date: "16/03/2025",
-          },
-        ],
-        partialResult: [
-          "Alta compatibilidade com um indivíduo desaparecido há 18 dias, identificado como João Carlos Ribeiro, 29 anos.",
-          "Registro odontológico fornecido pela família confirma a extração recente do siso, fortalecendo a hipótese de identificação.",
-        ],
-        resultAddedBy: "Dr. Marcos Almeida",
-        documents: [
-          {
-            id: 1,
-            title: "Relatório de Comparação Odonto-Legal",
-            status: "Em andamento",
-            annexDate: "Nenhum anexo",
-          },
-          {
-            id: 2,
-            title: "Registro Fotográfico das Evidências e RX Panorâmica",
-            status: "Anexado",
-            annexDate: "16/03/2025",
-          },
-          {
-            id: 3,
-            title: "Depoimento de Maria Ribeiro",
-            status: "Anexado",
-            annexDate: "14/03/2025",
-          },
-        ],
-        comments: [
-          {
-            id: 1,
-            text: "A análise preliminar sugere forte compatibilidade entre a vítima e João Carlos Ribeiro, desaparecido desde 23/02/2025. O cruzamento de informações odontológicas reforça essa hipótese. O laudo oficial será finalizado após revisão da equipe.",
-            author: "André Alves (Equipe Pericial)",
-          },
-        ],
-        lastUpdate: "17/03/2025 - 14h32",
-        updatedBy: "Dr. Marcos Almeida",
-      };
-
-      setCaseData(mockCaseData);
-      setIsLoading(false);
-    }, 800);
+    loadCaseDetails();
   }, [caseId]);
+
+  const loadCaseDetails = async () => {
+    try {
+      setIsLoading(true);
+
+      // Carregar dados básicos do caso
+      const caseResponse = await CaseService.getCaseById(caseId);
+      if (!caseResponse.success) {
+        throw new Error(caseResponse.error);
+      }
+
+      // Carregar evidências separadamente
+      const evidencesResponse = await CaseService.getCaseEvidences(caseId);
+      const evidences = evidencesResponse.success ? evidencesResponse.data : [];
+
+      // Carregar documentos separadamente
+      const documentsResponse = await CaseService.getCaseDocuments(caseId);
+      const documents = documentsResponse.success ? documentsResponse.data : [];
+
+      // Combinar todos os dados
+      setCaseData({
+        ...caseResponse.data,
+        evidences,
+        documents,
+      });
+    } catch (error) {
+      console.error("Erro detalhado:", error);
+      toast.error(error.message || "Erro ao carregar detalhes do caso");
+      navigate("/cases");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleEditCase = () => {
     console.log("Editar caso");
@@ -215,16 +149,18 @@ const CaseDetail = () => {
         <p className="text-gray-700 mb-4">{caseData.generalInfo}</p>
 
         <div className="grid grid-cols-1 mt-4">
-          <div>
-            <p>
-              <span className="font-bold">Local de Ocorrência:</span>{" "}
-              {caseData.occurrence.location}
-            </p>
-            <p>
-              <span className="font-bold">Data da Descoberta do Corpo:</span>{" "}
-              {caseData.occurrence.discoveryDate}
-            </p>
-          </div>
+          {caseData?.occurrence?.location && (
+            <div>
+              <p>
+                <span className="font-bold">Local de Ocorrência:</span>{" "}
+                {caseData.occurrence.location}
+              </p>
+              <p>
+                <span className="font-bold">Data da Descoberta do Corpo:</span>{" "}
+                {caseData.occurrence.discoveryDate}
+              </p>
+            </div>
+          )}
           <div>
             <p>
               <span className="font-bold">Histórico:</span>{" "}

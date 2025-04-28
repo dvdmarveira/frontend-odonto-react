@@ -51,6 +51,8 @@ import UserForm from "../pages/users/UserManagDetail";
 const ProtectedRoute = ({ children, roles = [] }) => {
   const { user, isAuthenticated } = useAuth();
 
+  console.log(user, isAuthenticated);
+
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
@@ -121,7 +123,7 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/cases/new"
+        path="/cases/add"
         element={
           <ProtectedRoute roles={["admin", "perito"]}>
             <AddCase />
