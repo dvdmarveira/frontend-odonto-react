@@ -30,6 +30,7 @@ const AddCase = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -144,9 +145,10 @@ const AddCase = () => {
       }
 
       setLoading(true);
-      const evidenciaId = Date.now();
+      const evidenciaId = Date.now().toString();
 
       setEvidencias((prev) => [...prev, { ...novaEvidencia, id: evidenciaId }]);
+
       setNovaEvidencia({
         tipo: "Selecionar",
         uploads: [],
@@ -162,11 +164,41 @@ const AddCase = () => {
     }
   };
 
+  const handleAddDocumento = () => {
+    if (
+      novoDocumento.tipo === "Selecionar" ||
+      !novoDocumento.informacoes?.trim()
+    ) {
+      toast.error("Tipo e informações do documento são obrigatórios!");
+      return;
+    }
+
+    if (!TIPOS_DOCUMENTO.includes(novoDocumento.tipo)) {
+      toast.error("Tipo de documento inválido!");
+      return;
+    }
+
+    const documentoId = Date.now().toString();
+    setDocumentos((prev) => [...prev, { ...novoDocumento, id: documentoId }]);
+
+    setNovoDocumento({
+      tipo: "Selecionar",
+      uploads: [],
+      informacoes: "",
+      status: "rascunho",
+    });
+
+    toast.success("Documento adicionado com sucesso!");
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    if (isSubmitting) return;
 
     try {
+      setIsSubmitting(true);
+      setLoading(true);
+
       // Validações
       if (
         !formData.title.trim() ||
@@ -192,11 +224,13 @@ const AddCase = () => {
       const caseData = {
         title: formData.title.trim(),
         description: formData.description.trim(),
-        type: TIPOS_CASO[formData.type],
+        type: formData.type.toLowerCase(),
         status: formData.status,
-        data: formData.data,
+        data: new Date(formData.data).toISOString(),
         historico: formData.historico?.trim() || "",
         analises: formData.analises?.trim() || "",
+        responsible: user.id, // ID do usuário responsável
+        createdBy: user.id, // ID do usuário que está criando
       };
 
       console.log("Dados do caso a serem enviados:", caseData);
@@ -210,16 +244,24 @@ const AddCase = () => {
 
       // 3. Upload das evidências
       const evidencePromises = evidencias.map(async (evidencia) => {
-        const evidenceData = {
-          type: evidencia.tipo,
-          content: evidencia.descricao,
-          files: evidencia.uploads,
-          caseId,
-        };
+        const formData = new FormData();
+        formData.append(
+          "type",
+          EvidenceService.mapTipoToBackend(evidencia.tipo)
+        );
+        formData.append("content", evidencia.descricao);
+        formData.append("caseId", caseId);
+
+        if (evidencia.uploads) {
+          evidencia.uploads.forEach((file) => {
+            formData.append("files", file);
+          });
+        }
 
         const evidenceResponse = await EvidenceService.uploadEvidence(
           caseId,
-          evidenceData
+          formData,
+          user.id
         );
         if (!evidenceResponse.success) {
           throw new Error(
@@ -232,11 +274,12 @@ const AddCase = () => {
       // 4. Criar documentos/laudos
       const documentPromises = documentos.map(async (documento) => {
         const reportData = {
-          caseId,
+          case: caseId, // ID do caso
           title: documento.tipo,
-          content: documento.informacoes || "Sem informações adicionais",
-          type: documento.tipo.toLowerCase(),
+          content: documento.informacoes || "",
+          type: documento.tipo,
           status: documento.status || "rascunho",
+          attachments: documento.uploads || [],
         };
 
         console.log("Dados do documento a serem enviados:", reportData);
@@ -257,6 +300,7 @@ const AddCase = () => {
       console.error("Erro ao criar caso:", error);
       toast.error(error.message || "Erro ao criar caso");
     } finally {
+      setIsSubmitting(false);
       setLoading(false);
     }
   };
@@ -337,7 +381,7 @@ const AddCase = () => {
               >
                 <option value="">Selecione o tipo</option>
                 {Object.keys(TIPOS_CASO).map((tipo) => (
-                  <option key={tipo} value={tipo}>
+                  <option key={`tipo-${tipo}`} value={tipo}>
                     {tipo}
                   </option>
                 ))}
@@ -444,8 +488,8 @@ const AddCase = () => {
                 disabled={loading}
               >
                 <option value="Selecionar">Selecionar</option>
-                {TIPOS_EVIDENCIA.map((tipo) => (
-                  <option key={tipo} value={tipo}>
+                {TIPOS_EVIDENCIA.map((tipo, index) => (
+                  <option key={`tipo-evidencia-${index}-${tipo}`} value={tipo}>
                     {tipo}
                   </option>
                 ))}
@@ -496,10 +540,10 @@ const AddCase = () => {
               Evidências Adicionadas:
             </h3>
             <div className="space-y-4">
-              {evidencias.map((ev) => (
+              {evidencias.map((ev, index) => (
                 <div
-                  key={ev.id}
-                  className="border border-gray-200 p-4 rounded-lg relative hover:shadow-md transition-shadow"
+                  key={`evidencia-${index}-${ev.tipo}`}
+                  className="group relative border border-gray-200 p-4 rounded-lg hover:shadow-md transition-all duration-200"
                 >
                   <button
                     type="button"
@@ -508,10 +552,10 @@ const AddCase = () => {
                         prev.filter((e) => e.id !== ev.id)
                       )
                     }
-                    className="absolute top-2 right-2 text-gray-500 hover:text-red-500"
+                    className="absolute top-2 right-2 p-1 text-gray-400 hover:text-red-500 transition-colors duration-200"
                     disabled={loading}
                   >
-                    <X size={20} />
+                    <X size={20} weight="bold" />
                   </button>
                   <p className="font-medium">Tipo: {ev.tipo}</p>
                   <p className="text-gray-600">Descrição: {ev.descricao}</p>
@@ -551,14 +595,9 @@ const AddCase = () => {
                 disabled={loading}
               >
                 <option value="Selecionar">Selecionar</option>
-                {TIPOS_DOCUMENTO.map((tipo) => (
-                  <option key={tipo} value={tipo}>
-                    {tipo
-                      .split("_")
-                      .map(
-                        (word) => word.charAt(0).toUpperCase() + word.slice(1)
-                      )
-                      .join(" ")}
+                {TIPOS_DOCUMENTO.map((tipo, index) => (
+                  <option key={`tipo-documento-${index}-${tipo}`} value={tipo}>
+                    {tipo}
                   </option>
                 ))}
               </select>
@@ -622,7 +661,7 @@ const AddCase = () => {
           <div className="flex justify-end">
             <button
               type="button"
-              onClick={() => setDocumentos((prev) => [...prev, novoDocumento])}
+              onClick={handleAddDocumento}
               className="bg-blue_dark hover:bg-blue_primary text-white font-semibold py-2 px-6 rounded-md flex items-center gap-2"
               disabled={loading}
             >
@@ -639,10 +678,10 @@ const AddCase = () => {
               Documentos Adicionados:
             </h3>
             <div className="space-y-4">
-              {documentos.map((doc) => (
+              {documentos.map((doc, index) => (
                 <div
-                  key={doc.id}
-                  className="border border-gray-200 p-4 rounded-lg relative hover:shadow-md transition-shadow"
+                  key={`documento-${index}-${doc.tipo}`}
+                  className="group relative border border-gray-200 p-4 rounded-lg hover:shadow-md transition-all duration-200"
                 >
                   <button
                     type="button"
@@ -651,10 +690,10 @@ const AddCase = () => {
                         prev.filter((d) => d.id !== doc.id)
                       )
                     }
-                    className="absolute top-2 right-2 text-gray-500 hover:text-red-500"
+                    className="absolute top-2 right-2 p-1 text-gray-400 hover:text-red-500 transition-colors duration-200"
                     disabled={loading}
                   >
-                    <X size={20} />
+                    <X size={20} weight="bold" />
                   </button>
                   <div className="grid grid-cols-2 gap-4">
                     <div>

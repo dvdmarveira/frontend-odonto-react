@@ -9,6 +9,8 @@ import {
 } from "@phosphor-icons/react";
 import { toast } from "react-hot-toast";
 import CaseService from "../../services/cases/caseService";
+import evidenceService from "../../services/evidences/evidenceService";
+import reportService from "../../services/reports/reportService";
 
 const CaseDetail = () => {
   const { caseId } = useParams();
@@ -32,18 +34,23 @@ const CaseDetail = () => {
       }
 
       // Carregar evidências separadamente
-      const evidencesResponse = await CaseService.getCaseEvidences(caseId);
+      const evidencesResponse = await evidenceService.getEvidences(caseId);
       const evidences = evidencesResponse.success ? evidencesResponse.data : [];
 
       // Carregar documentos separadamente
       const documentsResponse = await CaseService.getCaseDocuments(caseId);
       const documents = documentsResponse.success ? documentsResponse.data : [];
 
+      // Carregar relatórios separadamente
+      const reportsResponse = await reportService.getReports({ caseId });
+      const reports = reportsResponse.success ? reportsResponse.data : [];
+
       // Combinar todos os dados
       setCaseData({
         ...caseResponse.data,
         evidences,
         documents,
+        reports,
       });
     } catch (error) {
       console.error("Erro detalhado:", error);
