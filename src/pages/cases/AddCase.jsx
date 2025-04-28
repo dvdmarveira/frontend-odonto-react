@@ -399,7 +399,7 @@ const AddCase = () => {
                 value={formData.title}
                 onChange={handleChange}
                 placeholder="Digite o título do caso"
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue_primary"
+                className="w-full px-4 py-2 rounded-lg bg-blue_quaternary border border-[#3A536B] text-white placeholder:text-white/70 focus:outline-none focus:ring-2 focus:ring-blue_dark"
                 required
                 disabled={loading}
               />
@@ -413,7 +413,7 @@ const AddCase = () => {
                 name="type"
                 value={formData.type}
                 onChange={handleChange}
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue_primary"
+                className="w-full px-4 py-2 rounded-lg bg-blue_dark border border-[#3A536B] text-white focus:outline-none focus:ring-2 focus:ring-blue_dark"
                 required
                 disabled={loading}
               >
@@ -435,7 +435,7 @@ const AddCase = () => {
                 name="data"
                 value={formData.data}
                 onChange={handleChange}
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue_primary"
+                className="w-full px-4 py-2 rounded-lg bg-blue_quaternary border border-[#3A536B] text-white placeholder:text-white/70 focus:outline-none focus:ring-2 focus:ring-blue_dark [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert-[1]"
                 disabled={loading}
               />
             </div>
@@ -448,7 +448,7 @@ const AddCase = () => {
                 name="status"
                 value={formData.status}
                 onChange={handleChange}
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue_primary"
+                className="w-full px-4 py-2 rounded-lg bg-blue_dark border border-[#3A536B] text-white focus:outline-none focus:ring-2 focus:ring-blue_dark"
                 disabled={loading}
               >
                 <option value="em_andamento">Em Andamento</option>
@@ -466,7 +466,7 @@ const AddCase = () => {
                 value={formData.description}
                 onChange={handleChange}
                 placeholder="Digite a descrição detalhada do caso"
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue_primary h-24"
+                className="w-full px-4 py-2 rounded-lg bg-blue_quaternary border border-[#3A536B] text-white placeholder:text-white/70 focus:outline-none focus:ring-2 focus:ring-blue_dark h-24"
                 required
                 disabled={loading}
               />
@@ -481,7 +481,7 @@ const AddCase = () => {
                 value={formData.historico}
                 onChange={handleChange}
                 placeholder="Histórico do caso"
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue_primary h-24"
+                className="w-full px-4 py-2 rounded-lg bg-blue_quaternary border border-[#3A536B] text-white placeholder:text-white/70 focus:outline-none focus:ring-2 focus:ring-blue_dark h-24"
                 disabled={loading}
               />
             </div>
@@ -495,7 +495,7 @@ const AddCase = () => {
                 value={formData.analises}
                 onChange={handleChange}
                 placeholder="Análises preliminares"
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue_primary h-24"
+                className="w-full px-4 py-2 rounded-lg bg-blue_quaternary border border-[#3A536B] text-white placeholder:text-white/70 focus:outline-none focus:ring-2 focus:ring-blue_dark h-24"
                 disabled={loading}
               />
             </div>
@@ -522,7 +522,7 @@ const AddCase = () => {
                     tipo: e.target.value,
                   }))
                 }
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue_primary appearance-none"
+                className="w-full px-4 py-2 rounded-lg bg-blue_dark border border-[#3A536B] text-white focus:outline-none focus:ring-2 focus:ring-blue_dark"
                 disabled={loading}
               >
                 <option value="Selecionar">Selecionar</option>
@@ -566,7 +566,7 @@ const AddCase = () => {
               }))
             }
             placeholder="Descrição da Evidência"
-            className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue_primary h-24"
+            className="w-full px-4 py-2 rounded-lg bg-blue_quaternary border border-[#3A536B] text-white placeholder:text-white/70 focus:outline-none focus:ring-2 focus:ring-blue_dark h-24"
             disabled={loading}
           />
         </div>
@@ -629,7 +629,7 @@ const AddCase = () => {
                     tipo: e.target.value,
                   }))
                 }
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue_primary appearance-none"
+                className="w-full px-4 py-2 rounded-lg bg-blue_dark border border-[#3A536B] text-white focus:outline-none focus:ring-2 focus:ring-blue_dark"
                 disabled={loading}
               >
                 <option value="Selecionar">Selecionar</option>
@@ -662,7 +662,7 @@ const AddCase = () => {
                       status: e.target.value,
                     }))
                   }
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue_primary appearance-none"
+                  className="w-full px-4 py-2 rounded-lg bg-blue_dark border border-[#3A536B] text-white focus:outline-none focus:ring-2 focus:ring-blue_dark"
                   disabled={loading}
                 >
                   <option value="rascunho">Rascunho</option>
@@ -691,7 +691,7 @@ const AddCase = () => {
                 }))
               }
               placeholder="Descreva as informações relevantes do documento"
-              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue_primary h-24"
+              className="w-full px-4 py-2 rounded-lg bg-blue_quaternary border border-[#3A536B] text-white placeholder:text-white/70 focus:outline-none focus:ring-2 focus:ring-blue_dark h-24"
               disabled={loading}
             />
           </div>

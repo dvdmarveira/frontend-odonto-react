@@ -1,7 +1,16 @@
 import React, { useState, useEffect } from "react";
-import SearchBar from "../../components/SearchBar";
+import {
+  MagnifyingGlass,
+  Plus,
+  Calendar,
+  FileText,
+  Eye,
+  User,
+} from "@phosphor-icons/react";
 import reportService from "../../services/reports/reportService";
 import { toast } from "react-toastify";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 const Reports = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -29,42 +38,162 @@ const Reports = () => {
     }
   };
 
+  const statusColor = (status) => {
+    switch (status) {
+      case "rascunho":
+        return "bg-yellow-100 text-yellow-800";
+      case "finalizado":
+        return "bg-green-100 text-green-800";
+      case "arquivado":
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const formatarData = (data) => {
+    try {
+      return format(new Date(data), "dd/MM/yyyy", { locale: ptBR });
+    } catch (error) {
+      return "Data inválida";
+    }
+  };
+
   return (
     <div className="p-6">
-      {/* Search Bar */}
-      <SearchBar
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        placeholder="Pesquisar relatórios..."
-      />
-
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <h2 className="text-xl font-semibold text-blue_primary mb-4">Laudos</h2>
-        <p className="text-gray-600 mb-6">
-          Esta página permite a geração e visualização de laudos relacionados
-          aos casos odontológicos forenses.
-        </p>
-
-        {loading ? (
-          <div className="flex justify-center items-center h-60">
-            <p>Carregando laudos...</p>
-          </div>
-        ) : reports.length === 0 ? (
-          <div className="flex justify-center items-center h-60 bg-gray-100 rounded-lg border border-dashed border-gray-300">
-            <p className="text-gray-500">Nenhum laudo encontrado</p>
-          </div>
-        ) : (
-          <div className="grid gap-4">
-            {reports.map((report) => (
-              <div key={report.id} className="p-4 border rounded-lg">
-                <h3 className="font-semibold">{report.title}</h3>
-                <p className="text-sm text-gray-600">{report.type}</p>
-                <p className="text-sm text-gray-600">Status: {report.status}</p>
-              </div>
-            ))}
-          </div>
-        )}
+      {/* Stats Cards */}
+      <div className="bg-blue_dark shadow-xl rounded-lg p-6 mb-10 flex justify-between">
+        <div className="text-center flex-1">
+          <h3 className="text-white text-lg font-medium mb-2">
+            Total de Laudos
+          </h3>
+          <p className="text-white text-4xl font-bold">
+            {reports?.length || 0}
+          </p>
+        </div>
+        <div className="text-center flex-1 mx-4">
+          <h3 className="text-white text-lg font-medium mb-2">Em Rascunho</h3>
+          <p className="text-white text-4xl font-bold">
+            {reports?.filter((rep) => rep.status === "rascunho").length || 0}
+          </p>
+        </div>
+        <div className="text-center flex-1">
+          <h3 className="text-white text-lg font-medium mb-2">Finalizados</h3>
+          <p className="text-white text-4xl font-bold">
+            {reports?.filter((rep) => rep.status === "finalizado").length || 0}
+          </p>
+        </div>
       </div>
+
+      {/* Filtros e Ações */}
+      <div className="mb-6 flex items-center gap-4">
+        <div className="flex-1">
+          <div className="relative">
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Buscar laudos..."
+              className="w-full px-4 py-2 pl-10 rounded-lg bg-white border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue_dark"
+            />
+            <MagnifyingGlass
+              size={20}
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+            />
+          </div>
+        </div>
+
+        <button className="bg-blue_dark hover:bg-blue_primary text-white px-6 py-2 rounded-lg inline-flex items-center">
+          <Plus size={20} className="mr-2" />
+          Novo Laudo
+        </button>
+      </div>
+
+      {/* Tabela de Laudos */}
+      {loading ? (
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue_primary mx-auto"></div>
+          <p className="mt-4 text-gray-600">Carregando laudos...</p>
+        </div>
+      ) : reports.length === 0 ? (
+        <div className="text-center py-8">
+          <p className="text-gray-600">Nenhum laudo encontrado</p>
+        </div>
+      ) : (
+        <div className="overflow-x-auto mb-4">
+          <table className="w-full bg-blue_quaternary rounded-lg overflow-hidden">
+            <thead>
+              <tr className="border-b border-white">
+                <th className="py-4 px-6 text-left text-white font-medium">
+                  Título
+                </th>
+                <th className="py-4 px-6 text-left text-white font-medium">
+                  Responsável
+                </th>
+                <th className="py-4 px-6 text-center text-white font-medium">
+                  Data
+                </th>
+                <th className="py-4 px-6 text-center text-white font-medium">
+                  Status
+                </th>
+                <th className="py-4 px-6 text-right text-white font-medium">
+                  Ações
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {reports.map((report) => (
+                <tr
+                  key={report.id}
+                  className="border-b border-white hover:bg-blue_dark transition-colors"
+                >
+                  <td className="py-4 px-6">
+                    <div className="flex items-center">
+                      <FileText size={20} className="mr-2 text-white" />
+                      <span className="text-white font-medium">
+                        {report.title}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="py-4 px-6">
+                    <div className="flex items-center">
+                      <User size={20} className="mr-2 text-white" />
+                      <span className="text-white">
+                        {report.createdBy?.name || "Não atribuído"}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="py-4 px-6 text-center">
+                    <div className="flex items-center justify-center text-white">
+                      <Calendar size={20} className="mr-2" />
+                      {formatarData(report.createdAt)}
+                    </div>
+                  </td>
+                  <td className="py-4 px-6 text-center">
+                    <span
+                      className={`px-3 py-1 rounded-full text-sm ${statusColor(
+                        report.status
+                      )}`}
+                    >
+                      {report.status === "rascunho"
+                        ? "Rascunho"
+                        : report.status === "finalizado"
+                        ? "Finalizado"
+                        : "Arquivado"}
+                    </span>
+                  </td>
+                  <td className="py-4 px-6 text-right">
+                    <button className="bg-[#DC3545] hover:bg-opacity-80 text-white px-4 py-2 rounded-full inline-flex items-center">
+                      <Eye size={16} className="mr-2" />
+                      Visualizar
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 };

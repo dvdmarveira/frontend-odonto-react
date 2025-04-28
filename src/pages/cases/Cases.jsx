@@ -3,19 +3,17 @@ import {
   MagnifyingGlass,
   Plus,
   Eye,
-  PencilSimple,
   Calendar,
   User,
-  ClockCounterClockwise,
   CaretLeft,
   CaretRight,
 } from "@phosphor-icons/react";
-import SearchBar from "../../components/SearchBar";
 import { useNavigate } from "react-router-dom";
 import CaseService from "../../services/cases/caseService";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "react-hot-toast";
+import CaseDetailModal from "../../components/modals/CaseDetailModal";
 
 const DEFAULT_STATS = {
   emAndamento: 0,
@@ -40,11 +38,34 @@ const Cases = () => {
   });
   const [stats, setStats] = useState(DEFAULT_STATS);
   const [pagination, setPagination] = useState(DEFAULT_PAGINATION);
+  const [selectedCase, setSelectedCase] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     loadCases();
   }, [filters, pagination.currentPage]);
+
+  // Função para calcular as estatísticas
+  const calculateStats = (casesData) => {
+    return casesData.reduce(
+      (acc, caso) => {
+        switch (caso.status) {
+          case "em_andamento":
+            acc.emAndamento++;
+            break;
+          case "finalizado":
+            acc.finalizados++;
+            break;
+          case "arquivado":
+            acc.arquivados++;
+            break;
+        }
+        return acc;
+      },
+      { emAndamento: 0, finalizados: 0, arquivados: 0 }
+    );
+  };
 
   const loadCases = async () => {
     try {
@@ -55,19 +76,22 @@ const Cases = () => {
       );
 
       if (response.success) {
-        setCases(response.data.cases || []);
-        setStats(response.data.stats || DEFAULT_STATS);
+        const casesData = response.data.cases || [];
+        setCases(casesData);
+
+        // Calcular estatísticas com base nos casos retornados
+        const calculatedStats = calculateStats(casesData);
+        setStats(calculatedStats);
+
         setPagination(response.data.pagination || DEFAULT_PAGINATION);
       } else {
         toast.error(response.error || "Erro ao buscar casos");
-        // Em caso de erro, mantenha os valores padrão
         setStats(DEFAULT_STATS);
         setPagination(DEFAULT_PAGINATION);
       }
     } catch (error) {
       console.error("Erro ao buscar casos:", error);
       toast.error("Erro ao carregar os casos");
-      // Em caso de erro, mantenha os valores padrão
       setStats(DEFAULT_STATS);
       setPagination(DEFAULT_PAGINATION);
     } finally {
@@ -87,8 +111,23 @@ const Cases = () => {
     navigate("/cases/add");
   };
 
-  const handleViewCase = (caseId) => {
-    navigate(`/cases/${caseId}`);
+  const handleViewCase = async (caseId) => {
+    try {
+      setIsLoading(true);
+      const response = await CaseService.getCaseById(caseId);
+
+      if (response.success) {
+        setSelectedCase(response.data);
+        setIsModalOpen(true);
+      } else {
+        toast.error(response.error || "Erro ao carregar detalhes do caso");
+      }
+    } catch (error) {
+      console.error("Erro ao carregar detalhes do caso:", error);
+      toast.error("Erro ao carregar detalhes do caso");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleFilterChange = (filterType, value) => {
@@ -116,7 +155,7 @@ const Cases = () => {
       case "finalizado":
         return "bg-green-100 text-green-800";
       case "arquivado":
-        return "bg-gray-100 text-gray-800";
+        return "bg-red-100 text-red-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -134,62 +173,65 @@ const Cases = () => {
   return (
     <div className="p-6">
       {/* Stats Cards */}
-      <div className="bg-blue_dark shadow-xl rounded-lg p-4 mb-10 flex justify-between">
-        <div className="text-center flex-1 border-r border-blue_primary">
-          <h3 className="text-white font-medium">Casos em andamento</h3>
-          <p className="text-white text-3xl font-bold">
+      <div className="bg-blue_dark shadow-xl rounded-lg p-6 mb-10 flex justify-between">
+        <div className="text-center flex-1">
+          <h3 className="text-white text-lg font-medium mb-2">
+            Casos em andamento
+          </h3>
+          <p className="text-white text-4xl font-bold">
             {stats?.emAndamento || 0}
           </p>
         </div>
-        <div className="text-center flex-1 border-r border-blue_primary">
-          <h3 className="text-white font-medium">Casos Arquivados</h3>
-          <p className="text-white text-3xl font-bold">
+        <div className="text-center flex-1 mx-4">
+          <h3 className="text-white text-lg font-medium mb-2">
+            Casos Arquivados
+          </h3>
+          <p className="text-white text-4xl font-bold">
             {stats?.arquivados || 0}
           </p>
         </div>
         <div className="text-center flex-1">
-          <h3 className="text-white font-medium">Casos Concluídos</h3>
-          <p className="text-white text-3xl font-bold">
+          <h3 className="text-white text-lg font-medium mb-2">
+            Casos Finalizados
+          </h3>
+          <p className="text-white text-4xl font-bold">
             {stats?.finalizados || 0}
           </p>
         </div>
       </div>
 
       {/* Filtros e Ações */}
-      <div className="mb-6 flex flex-wrap gap-4 items-center justify-between">
-        <div className="flex gap-4 flex-1">
-          <SearchBar
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Buscar casos..."
-          />
-
-          <select
-            value={filters.status}
-            onChange={(e) => handleFilterChange("status", e.target.value)}
-            className="px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:border-blue_secondary"
-          >
-            <option value="todos">Todos os Status</option>
-            <option value="em_andamento">Em Andamento</option>
-            <option value="finalizado">Finalizado</option>
-            <option value="arquivado">Arquivado</option>
-          </select>
-
-          <select
-            value={filters.type}
-            onChange={(e) => handleFilterChange("type", e.target.value)}
-            className="px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:border-blue_secondary"
-          >
-            <option value="">Todos os Tipos</option>
-            <option value="acidente">Acidente</option>
-            <option value="identificacao">Identificação</option>
-            <option value="criminal">Criminal</option>
-          </select>
+      <div className="mb-6 flex items-center gap-4">
+        <div className="flex-1">
+          <div className="relative">
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Buscar casos..."
+              className="w-full px-4 py-2 pl-10 rounded-lg bg-white border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue_dark"
+            />
+            <MagnifyingGlass
+              size={20}
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+            />
+          </div>
         </div>
+
+        <select
+          value={filters.status}
+          onChange={(e) => handleFilterChange("status", e.target.value)}
+          className="px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue_dark bg-white"
+        >
+          <option value="todos">Todos os Status</option>
+          <option value="em_andamento">Em Andamento</option>
+          <option value="finalizado">Finalizado</option>
+          <option value="arquivado">Arquivado</option>
+        </select>
 
         <button
           onClick={handleAddCase}
-          className="bg-blue_primary hover:bg-blue_secondary text-white px-4 py-2 rounded-lg inline-flex items-center"
+          className="bg-blue_dark hover:bg-blue_primary text-white px-6 py-2 rounded-lg inline-flex items-center"
         >
           <Plus size={20} className="mr-2" />
           Novo Caso
@@ -211,77 +253,80 @@ const Cases = () => {
           <div className="overflow-x-auto mb-4">
             <table className="w-full bg-blue_quaternary rounded-lg overflow-hidden">
               <thead>
-                <tr className="border-b border-blue_primary border-opacity-20">
-                  <th className="py-4 px-4 text-left text-white">
+                <tr className="border-b border-white">
+                  <th className="py-4 px-6 text-left text-white font-medium">
                     Responsável
                   </th>
-                  <th className="py-4 px-4 text-left text-white">Caso</th>
-                  <th className="py-4 px-4 text-center text-white">Status</th>
-                  <th className="py-4 px-4 text-center text-white">Data</th>
-                  <th className="py-4 px-4 text-right text-white">Ações</th>
+                  <th className="py-4 px-6 text-left text-white font-medium">
+                    Caso
+                  </th>
+                  <th className="py-4 px-6 text-center text-white font-medium">
+                    Status
+                  </th>
+                  <th className="py-4 px-6 text-center text-white font-medium">
+                    Data
+                  </th>
+                  <th className="py-4 px-6 text-right text-white font-medium">
+                    Ações
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                {filteredCases.map(
-                  (caso) =>
-                    caso && (
-                      <tr
-                        key={caso.id}
-                        className="border-b border-blue_primary border-opacity-20 hover:bg-blue_dark transition-colors"
+                {filteredCases.map((caso) => (
+                  <tr
+                    key={caso.id}
+                    className="border-b border-white hover:bg-blue_dark transition-colors"
+                  >
+                    <td className="py-4 px-6 text-white">
+                      <div className="flex items-center">
+                        <User size={20} className="mr-2 text-white-400" />
+                        {caso.responsible?.name || "Não atribuído"}
+                      </div>
+                    </td>
+                    <td className="py-4 px-6">
+                      <div>
+                        <p className="text-white font-medium">{caso.title}</p>
+                        <p className="text-sm text-gray-400">
+                          {caso.description}
+                        </p>
+                      </div>
+                    </td>
+                    <td className="py-4 px-6 text-center">
+                      <span
+                        className={`px-3 py-1 rounded-full text-sm ${statusColor(
+                          caso.status
+                        )}`}
                       >
-                        <td className="py-4 px-4 font-medium text-white">
-                          <div className="flex items-center">
-                            <User size={20} className="mr-2" />
-                            {caso.responsible?.name || "Não atribuído"}
-                          </div>
-                        </td>
-                        <td className="py-4 px-4 text-white">
-                          <div>
-                            <span className="font-bold">
-                              #{caso.id?.slice(-4) || "N/A"}
-                            </span>
-                            <p className="text-sm">
-                              {caso.title || "Sem título"}
-                            </p>
-                          </div>
-                        </td>
-                        <td className="py-4 px-4 text-center">
-                          <span
-                            className={`px-3 py-1 rounded-full text-sm ${statusColor(
-                              caso.status
-                            )} text-white`}
-                          >
-                            {caso.status === "em_andamento"
-                              ? "Em Andamento"
-                              : caso.status === "finalizado"
-                              ? "Finalizado"
-                              : "Arquivado"}
-                          </span>
-                        </td>
-                        <td className="py-4 px-4 text-center text-white">
-                          <div className="flex items-center justify-center">
-                            <Calendar size={20} className="mr-2" />
-                            {formatarData(caso.createdAt)}
-                          </div>
-                        </td>
-                        <td className="py-4 px-4 text-right">
-                          <button
-                            onClick={() => handleViewCase(caso.id)}
-                            className="bg-red_secondary hover:bg-opacity-90 text-white px-4 py-2 rounded-full inline-flex items-center mr-2"
-                          >
-                            <Eye size={16} className="mr-1" />
-                            Visualizar
-                          </button>
-                        </td>
-                      </tr>
-                    )
-                )}
+                        {caso.status === "em_andamento"
+                          ? "Em Andamento"
+                          : caso.status === "finalizado"
+                          ? "Finalizado"
+                          : "Arquivado"}
+                      </span>
+                    </td>
+                    <td className="py-4 px-6 text-center text-white">
+                      <div className="flex items-center justify-center">
+                        <Calendar size={20} className="mr-2 text-white-400" />
+                        {formatarData(caso.createdAt)}
+                      </div>
+                    </td>
+                    <td className="py-4 px-6 text-right">
+                      <button
+                        onClick={() => handleViewCase(caso.id)}
+                        className="bg-[#DC3545] hover:bg-opacity-80 text-white px-4 py-2 rounded-full inline-flex items-center"
+                      >
+                        <Eye size={16} className="mr-2" />
+                        Visualizar
+                      </button>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
 
           {/* Paginação */}
-          <div className="flex justify-between items-center mt-4">
+          <div className="flex justify-between items-center mt-6">
             <p className="text-sm text-gray-600">
               Mostrando {filteredCases.length} de {pagination?.total || 0} casos
             </p>
@@ -289,18 +334,18 @@ const Cases = () => {
               <button
                 onClick={() => handlePageChange(pagination.currentPage - 1)}
                 disabled={pagination.currentPage === 1}
-                className="p-2 rounded-lg border border-gray-300 disabled:opacity-50"
+                className="p-2 rounded-lg border border-gray-300 disabled:opacity-50 hover:bg-gray-100"
               >
                 <CaretLeft size={20} />
               </button>
-              <span className="px-4 py-2">
+              <span className="px-4 py-2 text-gray-700">
                 Página {pagination?.currentPage || 1} de{" "}
                 {pagination?.pages || 1}
               </span>
               <button
                 onClick={() => handlePageChange(pagination.currentPage + 1)}
                 disabled={pagination.currentPage === pagination.pages}
-                className="p-2 rounded-lg border border-gray-300 disabled:opacity-50"
+                className="p-2 rounded-lg border border-gray-300 disabled:opacity-50 hover:bg-gray-100"
               >
                 <CaretRight size={20} />
               </button>
@@ -308,6 +353,16 @@ const Cases = () => {
           </div>
         </>
       )}
+
+      {/* Case Detail Modal */}
+      <CaseDetailModal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedCase(null);
+        }}
+        caseData={selectedCase}
+      />
     </div>
   );
 };
