@@ -202,12 +202,43 @@ class CaseService {
 
   async deleteCase(caseId) {
     try {
-      await api.delete(`/api/cases/${caseId}`);
-      return { success: true };
+      // Validar o ID do caso
+      if (!caseId || !caseId.match(/^[0-9a-fA-F]{24}$/)) {
+        console.error("ID do caso inválido:", caseId);
+        return {
+          success: false,
+          message: "ID do caso inválido",
+        };
+      }
+
+      console.log("Tentando deletar caso:", caseId);
+
+      const response = await api.delete(`/api/cases/${caseId}`);
+
+      console.log("Resposta da deleção:", response.data);
+
+      return response.data;
     } catch (error) {
+      console.error("Erro ao deletar caso:", error);
+
+      if (error.response?.status === 404) {
+        return {
+          success: false,
+          message: "Caso não encontrado",
+        };
+      }
+
+      if (error.response?.status === 403) {
+        return {
+          success: false,
+          message: "Sem permissão para deletar este caso",
+        };
+      }
+
       return {
         success: false,
-        error: error.response?.data?.message || "Erro ao deletar caso",
+        message: "Erro ao deletar caso",
+        error: error.message,
       };
     }
   }

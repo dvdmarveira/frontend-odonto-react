@@ -214,5 +214,3 @@ const DEFAULT_PAGINATION = {
 5. Implementar CI/CD
 
 ---
-
-_Última atualização: [DATA_ATUAL]_
