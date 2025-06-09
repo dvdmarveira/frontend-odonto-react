@@ -2,6 +2,8 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import peridentalLogo from "../assets/imgs/logo/peridentalLogo.svg";
 import { Question, UserCircle } from "@phosphor-icons/react";
 import { useAuth } from "../contexts/useAuth";
+import Dashboard from "../components/Dashboard/Dashboard.jsx";
+
 
 const Layout = ({ children }) => {
   const location = useLocation();
@@ -59,8 +61,8 @@ const Layout = ({ children }) => {
                   {user?.role === "admin"
                     ? "Administrador"
                     : user?.role === "perito"
-                    ? "Perito"
-                    : "Assistente"}
+                      ? "Perito"
+                      : "Assistente"}
                 </p>
               </div>
             </div>
@@ -75,35 +77,33 @@ const Layout = ({ children }) => {
           <nav className="mt-6">
             <ul className="space-y-2">
               <li
-                className={`border-b border-gray-200 py-2 ${
-                  location.pathname === "/dashboard" ? "bg-blue-50" : ""
-                }`}
+                className={`border-b border-gray-200 py-2 ${location.pathname === "/dashboard" ? "bg-blue-50" : ""
+                  }`}
               >
                 <Link
                   to="/dashboard"
-                  className={`block transition-colors duration-200 ${
-                    location.pathname === "/dashboard"
-                      ? "text-blue_secondary font-medium"
-                      : "text-gray_primary hover:text-blue_secondary"
-                  }`}
+                  className={`block transition-colors duration-200 ${location.pathname === "/dashboard"
+                    ? "text-blue_secondary font-medium"
+                    : "text-gray_primary hover:text-blue_secondary"
+                    }`}
                 >
                   Visão Geral
                 </Link>
               </li>
 
+
+
               {hasPermission("view_cases") && (
                 <li
-                  className={`border-b border-gray-200 py-2 ${
-                    location.pathname === "/cases" ? "bg-blue-50" : ""
-                  }`}
+                  className={`border-b border-gray-200 py-2 ${location.pathname === "/cases" ? "bg-blue-50" : ""
+                    }`}
                 >
                   <Link
                     to="/cases"
-                    className={`block transition-colors duration-200 ${
-                      location.pathname === "/cases"
-                        ? "text-blue_secondary font-medium"
-                        : "text-gray_primary hover:text-blue_secondary"
-                    }`}
+                    className={`block transition-colors duration-200 ${location.pathname === "/cases"
+                      ? "text-blue_secondary font-medium"
+                      : "text-gray_primary hover:text-blue_secondary"
+                      }`}
                   >
                     Gestão de Casos
                   </Link>
@@ -112,17 +112,15 @@ const Layout = ({ children }) => {
 
               {hasPermission("view_patients") && (
                 <li
-                  className={`border-b border-gray-200 py-2 ${
-                    location.pathname === "/patients" ? "bg-blue-50" : ""
-                  }`}
+                  className={`border-b border-gray-200 py-2 ${location.pathname === "/patients" ? "bg-blue-50" : ""
+                    }`}
                 >
                   <Link
                     to="/patients"
-                    className={`block transition-colors duration-200 ${
-                      location.pathname === "/patients"
-                        ? "text-blue_secondary font-medium"
-                        : "text-gray_primary hover:text-blue_secondary"
-                    }`}
+                    className={`block transition-colors duration-200 ${location.pathname === "/patients"
+                      ? "text-blue_secondary font-medium"
+                      : "text-gray_primary hover:text-blue_secondary"
+                      }`}
                   >
                     Pacientes
                   </Link>
@@ -131,17 +129,15 @@ const Layout = ({ children }) => {
 
               {hasPermission("view_evidences") && (
                 <li
-                  className={`border-b border-gray-200 py-2 ${
-                    location.pathname === "/evidences" ? "bg-blue-50" : ""
-                  }`}
+                  className={`border-b border-gray-200 py-2 ${location.pathname === "/evidences" ? "bg-blue-50" : ""
+                    }`}
                 >
                   <Link
                     to="/evidences"
-                    className={`block transition-colors duration-200 ${
-                      location.pathname === "/evidences"
-                        ? "text-blue_secondary font-medium"
-                        : "text-gray_primary hover:text-blue_secondary"
-                    }`}
+                    className={`block transition-colors duration-200 ${location.pathname === "/evidences"
+                      ? "text-blue_secondary font-medium"
+                      : "text-gray_primary hover:text-blue_secondary"
+                      }`}
                   >
                     Evidências
                   </Link>
@@ -150,38 +146,51 @@ const Layout = ({ children }) => {
 
               {hasPermission("view_reports") && (
                 <li
-                  className={`border-b border-gray-200 py-2 ${
-                    location.pathname === "/reports" ? "bg-blue-50" : ""
-                  }`}
+                  className={`border-b border-gray-200 py-2 ${location.pathname === "/reports" ? "bg-blue-50" : ""
+                    }`}
                 >
                   <Link
                     to="/reports"
-                    className={`block transition-colors duration-200 ${
-                      location.pathname === "/reports"
-                        ? "text-blue_secondary font-medium"
-                        : "text-gray_primary hover:text-blue_secondary"
-                    }`}
+                    className={`block transition-colors duration-200 ${location.pathname === "/reports"
+                      ? "text-blue_secondary font-medium"
+                      : "text-gray_primary hover:text-blue_secondary"
+                      }`}
                   >
                     Laudos
                   </Link>
                 </li>
               )}
 
+              <li
+                className={`border-b border-gray-200 py-2 ${location.pathname.startsWith("/dashboard/novo") ? "bg-blue-50" : ""
+                  }`}
+              >
+                <Link
+                  to="/dashboard/novo"
+                  className={`block transition-colors duration-200 ${location.pathname.startsWith("/dashboard/novo")
+                      ? "text-blue_secondary font-medium"
+                      : "text-gray_primary hover:text-blue_secondary"
+                    }`}
+                >
+                  Dashboard
+                </Link>
+              </li>
+
+
+
               {hasPermission("manage_users") && (
                 <li
-                  className={`border-b border-gray-200 py-2 ${
-                    location.pathname.includes("/admin/users")
-                      ? "bg-blue-50"
-                      : ""
-                  }`}
+                  className={`border-b border-gray-200 py-2 ${location.pathname.includes("/admin/users")
+                    ? "bg-blue-50"
+                    : ""
+                    }`}
                 >
                   <Link
                     to="/admin/users"
-                    className={`block transition-colors duration-200 ${
-                      location.pathname.includes("/admin/users")
-                        ? "text-blue_secondary font-medium"
-                        : "text-gray_primary hover:text-blue_secondary"
-                    }`}
+                    className={`block transition-colors duration-200 ${location.pathname.includes("/admin/users")
+                      ? "text-blue_secondary font-medium"
+                      : "text-gray_primary hover:text-blue_secondary"
+                      }`}
                   >
                     Gestão de Acesso
                   </Link>
@@ -202,3 +211,4 @@ const Layout = ({ children }) => {
 };
 
 export default Layout;
+

@@ -7,6 +7,7 @@ import Login from "../pages/Login";
 import Register from "../pages/Register";
 import NotFound from "../pages/NotFound";
 
+
 // Componentes temporários para páginas ainda não implementadas
 const ForgotPassword = () => (
   <div className="p-6">Página de Recuperação de Senha</div>
@@ -32,6 +33,7 @@ const DentalRecordComparison = () => (
 
 // Páginas protegidas
 import Dashboard from "../pages/Dashboard";
+import DashboardNovo from "../components/Dashboard/Dashboard";
 
 // Casos
 import Cases from "../pages/cases/Cases";
@@ -98,11 +100,22 @@ const AppRoutes = () => {
         }
       />
 
+
+
+
       <Route
         path="/dashboard"
         element={
           <ProtectedRoute>
             <Dashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard/novo"
+        element={
+          <ProtectedRoute>
+            <DashboardNovo />
           </ProtectedRoute>
         }
       />
@@ -303,3 +316,4 @@ const AppRoutes = () => {
 };
 
 export default AppRoutes;
+
