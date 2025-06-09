@@ -5,11 +5,14 @@ const Dashboard = () => {
   const [dadosCasos, setDadosCasos] = useState([]);
   const [dataInicio, setDataInicio] = useState('');
   const [dataFim, setDataFim] = useState('');
-  const gradiente = ['#40516c', '#4a5d7c', '#53698c', '#5d759c', '#6b82a7', '#7790b1', '#8b9dba'];
+
+  // referências de gráficos (mantidos como let)
   let graficoRosca = null;
   let graficoDistribuicao = null;
   let graficoEtnia = null;
   let graficoEvolucao = null;
+
+  const gradiente = ['#40516c', '#4a5d7c', '#53698c', '#5d759c', '#6b82a7', '#7790b1', '#8b9dba'];
 
   useEffect(() => {
     carregarDados();
@@ -25,14 +28,12 @@ const Dashboard = () => {
       const data = await res.json();
       setDadosCasos(data);
     } catch (erro) {
-      console.error('Erro ao carregar dados:', erro);
-      alert('Não foi possível carregar os dados.');
+      alert('Erro ao carregar dados.');
     }
   };
 
   const filtrarPorData = (casos) => {
     return casos.filter((caso) => {
-      if (!caso.data_do_caso) return false;
       const data = new Date(caso.data_do_caso);
       const inicio = dataInicio ? new Date(dataInicio) : null;
       const fim = dataFim ? new Date(dataFim) : null;
@@ -43,186 +44,142 @@ const Dashboard = () => {
   const contarOcorrencias = (dados, chave) => {
     const contagem = {};
     dados.forEach((caso) => {
-      try {
-        const valor = chave.includes('.')
-          ? chave.split('.').reduce((o, k) => (o && o[k] ? o[k] : null), caso)
-          : caso[chave];
-        if (valor !== undefined && valor !== null) {
-          contagem[valor] = (contagem[valor] || 0) + 1;
-        }
-      } catch {}
+      const valor = chave.includes('.')
+        ? chave.split('.').reduce((o, k) => (o?.[k] ?? null), caso)
+        : caso[chave];
+      if (valor) contagem[valor] = (contagem[valor] || 0) + 1;
     });
     return contagem;
   };
 
-  const atualizarGraficoRosca = (dadosFiltrados) => {
-    const contagem = contarOcorrencias(dadosFiltrados, 'tipo_do_caso');
-    const labels = Object.keys(contagem);
-    const valores = Object.values(contagem);
-    const cores = gradiente.slice(0, labels.length);
-
-    const ctx = document.createElement('canvas');
-    const container = document.getElementById('graficoRosca');
+  const renderGrafico = (id, tipo, data, options, instancia) => {
+    const container = document.getElementById(id);
+    if (!container) return;
     container.innerHTML = '';
-    container.appendChild(ctx);
-
-    if (graficoRosca) graficoRosca.destroy();
-
-    graficoRosca = new Chart(ctx, {
-      type: 'doughnut',
-      data: {
-        labels,
-        datasets: [{
-          data: valores,
-          backgroundColor: cores,
-          borderWidth: 0
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: { position: 'bottom' }
-        }
-      }
-    });
+    const canvas = document.createElement('canvas');
+    container.appendChild(canvas);
+    if (instancia) instancia.destroy();
+    return new Chart(canvas, { type: tipo, data, options });
   };
 
-  const atualizarGraficoDistribuicao = (dadosFiltrados) => {
-    const idades = dadosFiltrados
-      .map(c => c.vitima?.idade)
-      .filter(i => typeof i === 'number' && !isNaN(i) && i > 0);
-
-    const max = Math.max(...idades, 100);
-    const bins = [];
-    const labels = [];
-
-    for (let i = 1; i <= max; i += 10) {
-      labels.push(`${i}-${i + 9}`);
-      bins.push(0);
-    }
-
-    idades.forEach((idade) => {
-      const index = Math.floor((idade - 1) / 10);
-      if (index >= 0 && index < bins.length) bins[index]++;
-    });
-
-    const ctx = document.createElement('canvas');
-    const container = document.getElementById('graficoDistribuicao');
-    container.innerHTML = '';
-    container.appendChild(ctx);
-
-    if (graficoDistribuicao) graficoDistribuicao.destroy();
-
-    graficoDistribuicao = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels,
+  const atualizarGraficoRosca = (dados) => {
+    const contagem = contarOcorrencias(dados, 'tipo_do_caso');
+    graficoRosca = renderGrafico(
+      'graficoRosca',
+      'doughnut',
+      {
+        labels: Object.keys(contagem),
         datasets: [{
-          label: 'Número de vítimas por faixa etária',
-          data: bins,
-          backgroundColor: '#5d759c',
-          borderWidth: 0
+          data: Object.values(contagem),
+          backgroundColor: gradiente
         }]
       },
-      options: {
-        responsive: true,
-        scales: { y: { beginAtZero: true } }
-      }
-    });
+      { responsive: true, plugins: { legend: { position: 'bottom' } } },
+      graficoRosca
+    );
   };
 
-  const atualizarGraficoEtnia = (dadosFiltrados) => {
-    const contagem = contarOcorrencias(dadosFiltrados, 'vitima.etnia');
-    const labels = Object.keys(contagem);
-    const valores = Object.values(contagem);
+  const atualizarGraficoDistribuicao = (dados) => {
+    const idades = dados.map(c => c.vitima?.idade).filter(i => i > 0);
+    const bins = new Array(10).fill(0);
+    const labels = bins.map((_, i) => `${i * 10 + 1}-${(i + 1) * 10}`);
 
-    const ctx = document.createElement('canvas');
-    const container = document.getElementById('graficoEtnia');
-    container.innerHTML = '';
-    container.appendChild(ctx);
+    idades.forEach(i => {
+      const idx = Math.floor((i - 1) / 10);
+      if (idx >= 0 && idx < bins.length) bins[idx]++;
+    });
 
-    if (graficoEtnia) graficoEtnia.destroy();
-
-    graficoEtnia = new Chart(ctx, {
-      type: 'bar',
-      data: {
+    graficoDistribuicao = renderGrafico(
+      'graficoDistribuicao',
+      'bar',
+      {
         labels,
-        datasets: [{
-          label: 'Casos por etnia da vítima',
-          data: valores,
-          backgroundColor: '#6b82a7',
-          borderWidth: 0
-        }]
+        datasets: [{ label: 'Faixas etárias', data: bins, backgroundColor: '#5d759c' }]
       },
-      options: {
-        responsive: true,
-        scales: { y: { beginAtZero: true } }
-      }
-    });
+      { responsive: true, scales: { y: { beginAtZero: true } } },
+      graficoDistribuicao
+    );
   };
 
-  const atualizarGraficoEvolucao = (dadosFiltrados) => {
+  const atualizarGraficoEtnia = (dados) => {
+    const contagem = contarOcorrencias(dados, 'vitima.etnia');
+    graficoEtnia = renderGrafico(
+      'graficoEtnia',
+      'bar',
+      {
+        labels: Object.keys(contagem),
+        datasets: [{ label: 'Por etnia', data: Object.values(contagem), backgroundColor: '#6b82a7' }]
+      },
+      { responsive: true, scales: { y: { beginAtZero: true } } },
+      graficoEtnia
+    );
+  };
+
+  const atualizarGraficoEvolucao = (dados) => {
     const contagem = {};
-    dadosFiltrados.forEach(caso => {
-      const data = new Date(caso.data_do_caso);
-      const mesAno = `${data.getFullYear()}-${(data.getMonth() + 1).toString().padStart(2, '0')}`;
-      contagem[mesAno] = (contagem[mesAno] || 0) + 1;
+    dados.forEach(({ data_do_caso }) => {
+      const d = new Date(data_do_caso);
+      const chave = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      contagem[chave] = (contagem[chave] || 0) + 1;
     });
-
     const labels = Object.keys(contagem).sort();
-    const valores = labels.map(label => contagem[label]);
+    const valores = labels.map(k => contagem[k]);
 
-    const ctx = document.createElement('canvas');
-    const container = document.getElementById('graficoEvolucao');
-    container.innerHTML = '';
-    container.appendChild(ctx);
-
-    if (graficoEvolucao) graficoEvolucao.destroy();
-
-    graficoEvolucao = new Chart(ctx, {
-      type: 'line',
-      data: {
+    graficoEvolucao = renderGrafico(
+      'graficoEvolucao',
+      'line',
+      {
         labels,
         datasets: [{
-          label: 'Evolução de casos por mês',
+          label: 'Casos por mês',
           data: valores,
-          backgroundColor: '#4a5d7c',
           borderColor: '#4a5d7c',
-          tension: 0.3,
-          fill: false
+          backgroundColor: '#4a5d7c',
+          tension: 0.3
         }]
       },
-      options: {
-        responsive: true,
-        scales: { y: { beginAtZero: true } }
-      }
-    });
+      { responsive: true, scales: { y: { beginAtZero: true } } },
+      graficoEvolucao
+    );
   };
 
   const atualizarGraficos = () => {
-    const dadosFiltrados = filtrarPorData(dadosCasos);
-    atualizarGraficoRosca(dadosFiltrados);
-    atualizarGraficoDistribuicao(dadosFiltrados);
-    atualizarGraficoEtnia(dadosFiltrados);
-    atualizarGraficoEvolucao(dadosFiltrados);
+    const filtrados = filtrarPorData(dadosCasos);
+    atualizarGraficoRosca(filtrados);
+    atualizarGraficoDistribuicao(filtrados);
+    atualizarGraficoEtnia(filtrados);
+    atualizarGraficoEvolucao(filtrados);
   };
 
   return (
-    <div>
-      <h2>Dashboard</h2>
-      <label>
-        Início:
-        <input type="date" value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} />
-      </label>
-      <label>
-        Fim:
-        <input type="date" value={dataFim} onChange={(e) => setDataFim(e.target.value)} />
-      </label>
+    <div className="dashboard">
+      <h2 style={{ textAlign: 'center', marginBottom: '1rem' }}>📊 Painel de Casos</h2>
 
-      <div id="graficoRosca" style={{ width: '100%', maxWidth: '600px', margin: 'auto', marginBottom: '40px' }}></div>
-      <div id="graficoDistribuicao" style={{ width: '100%', maxWidth: '600px', margin: 'auto', marginBottom: '40px' }}></div>
-      <div id="graficoEtnia" style={{ width: '100%', maxWidth: '600px', margin: 'auto', marginBottom: '40px' }}></div>
-      <div id="graficoEvolucao" style={{ width: '100%', maxWidth: '600px', margin: 'auto', marginBottom: '40px' }}></div>
+      <div className="filtros" style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginBottom: '2rem' }}>
+        <div>
+          <label>Início:</label><br />
+          <input type="date" value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} />
+        </div>
+        <div>
+          <label>Fim:</label><br />
+          <input type="date" value={dataFim} onChange={(e) => setDataFim(e.target.value)} />
+        </div>
+      </div>
+
+      <div
+        className="grade-graficos"
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+          gap: '2rem',
+          padding: '0 1rem'
+        }}
+      >
+        <div id="graficoRosca"></div>
+        <div id="graficoDistribuicao"></div>
+        <div id="graficoEtnia"></div>
+        <div id="graficoEvolucao"></div>
+      </div>
     </div>
   );
 };
