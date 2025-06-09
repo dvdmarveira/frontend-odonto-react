@@ -8,6 +8,8 @@ const Dashboard = () => {
   const gradiente = ['#40516c', '#4a5d7c', '#53698c', '#5d759c', '#6b82a7', '#7790b1', '#8b9dba'];
   let graficoRosca = null;
   let graficoDistribuicao = null;
+  let graficoEtnia = null;
+  let graficoEvolucao = null;
 
   useEffect(() => {
     carregarDados();
@@ -116,10 +118,78 @@ const Dashboard = () => {
       data: {
         labels,
         datasets: [{
-          label: 'Número de vítimas',
+          label: 'Número de vítimas por faixa etária',
           data: bins,
           backgroundColor: '#5d759c',
           borderWidth: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: { y: { beginAtZero: true } }
+      }
+    });
+  };
+
+  const atualizarGraficoEtnia = (dadosFiltrados) => {
+    const contagem = contarOcorrencias(dadosFiltrados, 'vitima.etnia');
+    const labels = Object.keys(contagem);
+    const valores = Object.values(contagem);
+
+    const ctx = document.createElement('canvas');
+    const container = document.getElementById('graficoEtnia');
+    container.innerHTML = '';
+    container.appendChild(ctx);
+
+    if (graficoEtnia) graficoEtnia.destroy();
+
+    graficoEtnia = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Casos por etnia da vítima',
+          data: valores,
+          backgroundColor: '#6b82a7',
+          borderWidth: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: { y: { beginAtZero: true } }
+      }
+    });
+  };
+
+  const atualizarGraficoEvolucao = (dadosFiltrados) => {
+    const contagem = {};
+    dadosFiltrados.forEach(caso => {
+      const data = new Date(caso.data_do_caso);
+      const mesAno = `${data.getFullYear()}-${(data.getMonth() + 1).toString().padStart(2, '0')}`;
+      contagem[mesAno] = (contagem[mesAno] || 0) + 1;
+    });
+
+    const labels = Object.keys(contagem).sort();
+    const valores = labels.map(label => contagem[label]);
+
+    const ctx = document.createElement('canvas');
+    const container = document.getElementById('graficoEvolucao');
+    container.innerHTML = '';
+    container.appendChild(ctx);
+
+    if (graficoEvolucao) graficoEvolucao.destroy();
+
+    graficoEvolucao = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Evolução de casos por mês',
+          data: valores,
+          backgroundColor: '#4a5d7c',
+          borderColor: '#4a5d7c',
+          tension: 0.3,
+          fill: false
         }]
       },
       options: {
@@ -133,6 +203,8 @@ const Dashboard = () => {
     const dadosFiltrados = filtrarPorData(dadosCasos);
     atualizarGraficoRosca(dadosFiltrados);
     atualizarGraficoDistribuicao(dadosFiltrados);
+    atualizarGraficoEtnia(dadosFiltrados);
+    atualizarGraficoEvolucao(dadosFiltrados);
   };
 
   return (
@@ -146,8 +218,11 @@ const Dashboard = () => {
         Fim:
         <input type="date" value={dataFim} onChange={(e) => setDataFim(e.target.value)} />
       </label>
-      <div id="graficoRosca" style={{ width: '100%', maxWidth: '600px', margin: 'auto' }}></div>
-      <div id="graficoDistribuicao" style={{ width: '100%', maxWidth: '600px', margin: 'auto', marginTop: '40px' }}></div>
+
+      <div id="graficoRosca" style={{ width: '100%', maxWidth: '600px', margin: 'auto', marginBottom: '40px' }}></div>
+      <div id="graficoDistribuicao" style={{ width: '100%', maxWidth: '600px', margin: 'auto', marginBottom: '40px' }}></div>
+      <div id="graficoEtnia" style={{ width: '100%', maxWidth: '600px', margin: 'auto', marginBottom: '40px' }}></div>
+      <div id="graficoEvolucao" style={{ width: '100%', maxWidth: '600px', margin: 'auto', marginBottom: '40px' }}></div>
     </div>
   );
 };
