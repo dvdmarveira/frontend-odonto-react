@@ -1,117 +1,90 @@
+// src/components/modals/AddPatientModal.jsx (Versão com todos os campos)
 import React, { useState, useEffect } from "react";
+import PatientService from "../../services/patients/patientService"; // Usando o serviço que já corrigimos
 import { toast } from "react-hot-toast";
-import {
-  createPatient,
-  updatePatient,
-} from "../../services/patients/patientService";
-import CaseService from "../../services/cases/caseService";
 
 const AddPatientModal = ({
   isOpen,
   onClose,
   patientData = null,
+  caseId,
   onSuccess,
 }) => {
   const [isLoading, setIsLoading] = useState(false);
-  const [cases, setCases] = useState([]);
-  const [formData, setFormData] = useState({
-    name: "",
-    numberOfTeeth: 32,
-    hasActiveCavities: false,
-    caseId: "",
-  });
+
+  const initialState = {
+    nic: "",
+    nome: "",
+    genero: "Masculino",
+    idade: "",
+    documento: "", // Novo campo
+    endereco: "", // Novo campo
+    corEtnia: "", // Novo campo
+    anotacoesAnatomicas: "", // Novo campo
+    odontograma: "{}", // Odontograma como string JSON
+    caseId: caseId || "",
+  };
+
+  const [formData, setFormData] = useState(initialState);
 
   useEffect(() => {
     if (isOpen) {
-      loadCases();
-    }
-  }, [isOpen]);
-
-  useEffect(() => {
-    if (patientData) {
-      setFormData({
-        name: patientData.name || "",
-        numberOfTeeth: patientData.numberOfTeeth,
-        hasActiveCavities: patientData.hasActiveCavities,
-        caseId: patientData.case?._id || "",
-      });
-    } else {
-      setFormData({
-        name: "",
-        numberOfTeeth: 32,
-        hasActiveCavities: false,
-        caseId: "",
-      });
-    }
-  }, [patientData]);
-
-  const loadCases = async () => {
-    try {
-      const response = await CaseService.getCases();
-      if (response.success) {
-        // Filtrar apenas casos que não têm paciente vinculado ou o caso atual do paciente sendo editado
-        const availableCases = response.data.cases.filter(
-          (c) => !c.patient || c._id === patientData?.case?._id
-        );
-        setCases(availableCases);
+      if (patientData) {
+        setFormData({
+          nic: patientData.nic || "",
+          nome: patientData.nome || "",
+          genero: patientData.genero || "Masculino",
+          idade: patientData.idade || "",
+          documento: patientData.documento || "",
+          endereco: patientData.endereco || "",
+          corEtnia: patientData.corEtnia || "",
+          anotacoesAnatomicas: patientData.anotacoesAnatomicas || "",
+          odontograma: JSON.stringify(patientData.odontograma || {}, null, 2),
+          caseId: patientData.case || caseId,
+        });
       } else {
-        toast.error("Erro ao carregar casos disponíveis");
+        setFormData({ ...initialState, caseId });
       }
-    } catch (error) {
-      console.error("Erro ao carregar casos:", error);
-      toast.error("Erro ao carregar casos disponíveis");
     }
-  };
+  }, [isOpen, patientData, caseId]);
 
-  const validateForm = () => {
-    if (!formData.caseId) {
-      toast.error("Por favor, selecione um caso");
-      return false;
-    }
-    if (formData.numberOfTeeth < 0 || formData.numberOfTeeth > 32) {
-      toast.error("O número de dentes deve estar entre 0 e 32");
-      return false;
-    }
-    return true;
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!validateForm()) return;
+    setIsLoading(true);
 
     try {
-      setIsLoading(true);
+      const finalData = {
+        ...formData,
+        odontograma: JSON.parse(formData.odontograma),
+      };
 
+      let result;
       if (patientData) {
-        const response = await updatePatient(patientData._id, formData);
-        if (response.success) {
-          toast.success("Paciente atualizado com sucesso");
-          onSuccess && onSuccess();
-          onClose();
-        } else {
-          toast.error(response.error || "Erro ao atualizar paciente");
-        }
+        result = await PatientService.updatePatient(patientData._id, finalData);
       } else {
-        const response = await createPatient(formData);
-        if (response.success) {
-          toast.success("Paciente adicionado com sucesso");
-          onSuccess && onSuccess();
-          onClose();
-        } else {
-          // Tratamento específico para erro de caso já com paciente
-          if (response.error?.includes("já possui um paciente")) {
-            toast.error("Este caso já possui um paciente vinculado");
-            // Recarregar a lista de casos para atualizar os disponíveis
-            loadCases();
-          } else {
-            toast.error(response.error || "Erro ao adicionar paciente");
-          }
-        }
+        result = await PatientService.createPatient(finalData);
+      }
+
+      if (result.success) {
+        toast.success(
+          patientData ? "Paciente atualizado!" : "Paciente criado!"
+        );
+        onSuccess();
+        onClose();
+      } else {
+        throw new Error(result.error);
       }
     } catch (error) {
-      console.error("Erro ao processar paciente:", error);
-      toast.error(error.message || "Erro ao processar solicitação");
+      toast.error(
+        error.message ||
+          "Ocorreu um erro. Verifique o formato do JSON do odontograma."
+      );
+      console.error(error);
     } finally {
       setIsLoading(false);
     }
@@ -121,125 +94,133 @@ const AddPatientModal = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg w-full max-w-md p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold text-gray-900">
-            {patientData ? "Editar Paciente" : "Adicionar Paciente"}
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
-          >
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path d="M6 18L18 6M6 6l12 12"></path>
-            </svg>
-          </button>
-        </div>
-
+      <div className="bg-white rounded-lg w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto">
+        <h2 className="text-xl font-bold mb-4">
+          {patientData ? "Editar Paciente" : "Adicionar Paciente ao Caso"}
+        </h2>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-gray-700 text-sm font-bold mb-2">
-              Caso *
-            </label>
-            <select
-              value={formData.caseId}
-              onChange={(e) =>
-                setFormData({ ...formData, caseId: e.target.value })
-              }
-              className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:border-blue_primary"
-              required
-              disabled={!!patientData} // Desabilitar seleção de caso na edição
-            >
-              <option value="">Selecione um caso</option>
-              {cases.map((caseItem) => (
-                <option key={caseItem._id} value={caseItem._id}>
-                  {caseItem.title}
-                </option>
-              ))}
-            </select>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label>Nome *</label>
+              <input
+                type="text"
+                name="nome"
+                value={formData.nome}
+                onChange={handleChange}
+                className="w-full p-2 border rounded"
+                required
+              />
+            </div>
+            <div>
+              <label>NIC *</label>
+              <input
+                type="text"
+                name="nic"
+                value={formData.nic}
+                onChange={handleChange}
+                className="w-full p-2 border rounded"
+                required
+              />
+            </div>
+            <div>
+              <label>Idade *</label>
+              <input
+                type="number"
+                name="idade"
+                value={formData.idade}
+                onChange={handleChange}
+                className="w-full p-2 border rounded"
+                required
+              />
+            </div>
+            <div>
+              <label>Gênero *</label>
+              <select
+                name="genero"
+                value={formData.genero}
+                onChange={handleChange}
+                className="w-full p-2 border rounded"
+              >
+                <option value="Masculino">Masculino</option>
+                <option value="Feminino">Feminino</option>
+                <option value="Outro">Outro</option>
+              </select>
+            </div>
+            {/* --- NOVOS CAMPOS ADICIONADOS --- */}
+            <div>
+              <label>Documento (Ex: RG)</label>
+              <input
+                type="text"
+                name="documento"
+                value={formData.documento}
+                onChange={handleChange}
+                className="w-full p-2 border rounded"
+              />
+            </div>
+            <div>
+              <label>Cor/Etnia</label>
+              <input
+                type="text"
+                name="corEtnia"
+                value={formData.corEtnia}
+                onChange={handleChange}
+                className="w-full p-2 border rounded"
+              />
+            </div>
           </div>
 
           <div>
-            <label className="block text-gray-700 text-sm font-bold mb-2">
-              Nome do Paciente
-            </label>
+            <label>Endereço Completo</label>
             <input
               type="text"
-              placeholder="Nome do paciente (opcional)"
-              value={formData.name}
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
-              }
-              className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:border-blue_primary"
+              name="endereco"
+              value={formData.endereco}
+              onChange={handleChange}
+              className="w-full p-2 border rounded"
             />
           </div>
 
           <div>
-            <label className="block text-gray-700 text-sm font-bold mb-2">
-              Número de Dentes *
-            </label>
-            <input
-              type="number"
-              min="0"
-              max="32"
-              value={formData.numberOfTeeth}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  numberOfTeeth: parseInt(e.target.value) || 0,
-                })
-              }
-              className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:border-blue_primary"
-              required
-            />
+            <label>Anotações Anatômicas</label>
+            <textarea
+              name="anotacoesAnatomicas"
+              value={formData.anotacoesAnatomicas}
+              onChange={handleChange}
+              className="w-full p-2 border rounded"
+              rows="3"
+            ></textarea>
           </div>
 
+          {/* --- CAMPO DO ODONTOGRAMA --- */}
           <div>
-            <label className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                checked={formData.hasActiveCavities}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    hasActiveCavities: e.target.checked,
-                  })
-                }
-                className="rounded border-gray-300 text-blue_primary focus:ring-blue_primary"
-              />
-              <span className="text-gray-700 text-sm font-bold">
-                Possui Cáries Ativas?
-              </span>
-            </label>
+            <label>Odontograma (formato JSON)</label>
+            <textarea
+              name="odontograma"
+              value={formData.odontograma}
+              onChange={handleChange}
+              className="w-full p-2 border rounded font-mono"
+              rows="6"
+            ></textarea>
+            <p className="text-xs text-gray-500 mt-1">
+              Exemplo: {'{ "dente_11": "cariado", "dente_23": "ausente" }'}
+            </p>
           </div>
 
           <div className="flex justify-end gap-3 mt-6">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium"
+              className="px-4 py-2"
               disabled={isLoading}
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="bg-blue_dark hover:bg-blue_primary text-white font-bold py-2 px-6 rounded-md disabled:opacity-50"
+              className="bg-blue_dark text-white font-bold py-2 px-6 rounded-md disabled:opacity-50"
               disabled={isLoading}
             >
-              {isLoading
-                ? "Processando..."
-                : patientData
-                ? "Atualizar"
-                : "Adicionar"}
+              {isLoading ? "Salvando..." : "Salvar Paciente"}
             </button>
           </div>
         </form>

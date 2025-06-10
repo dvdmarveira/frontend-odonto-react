@@ -1,110 +1,57 @@
-// Função para calcular a similaridade entre dois números de dentes
-const calculateTeethSimilarity = (teeth1, teeth2) => {
-  if (teeth1 === teeth2) return 100;
-  const diff = Math.abs(teeth1 - teeth2);
+// src/services/patients/patientMatchService.js (Versão de Análise)
 
-  // Se a diferença for maior que 4 dentes, considera muito diferente
-  if (diff > 4) return 0;
+/*
+  AVISO IMPORTANTE:
+  Esta lógica de correspondência de pacientes foi baseada em um modelo de dados
+  antigo (com os campos 'numberOfTeeth' e 'hasActiveCavities').
 
-  // Calcula a similaridade baseada na diferença
-  // Cada dente diferente reduz 25% da similaridade
-  return Math.max(0, 100 - diff * 25);
-};
+  O modelo de dados atual do backend (em models/Patient.js) não possui mais
+  esses campos. Em vez disso, ele usa uma estrutura mais detalhada com 'odontograma'.
+
+  Para que esta funcionalidade volte a funcionar, será necessário:
+  1.  Adaptar a lógica de 'calculateSimilarityScore' para ler e comparar
+      os dados de dentro do objeto 'odontograma'.
+  2.  Ou, alternativamente, criar um endpoint no backend que realize essa
+      comparação de forma mais robusta, possivelmente usando o modelo de IA.
+
+  O código abaixo está mantido como referência, mas não funcionará corretamente
+  com a estrutura de dados atual.
+*/
 
 class PatientMatchService {
-  // Calcula a pontuação de similaridade entre dois pacientes
+  // ATENÇÃO: Esta função usa campos que não existem mais no model Patient.js.
   static calculateSimilarityScore(patient1, patient2) {
     let score = 0;
-    let criteriaCount = 0;
 
-    // 1. Comparação do número de dentes (40% do peso total)
-    if (patient1.numberOfTeeth && patient2.numberOfTeeth) {
-      const teethScore = calculateTeethSimilarity(
-        patient1.numberOfTeeth,
-        patient2.numberOfTeeth
-      );
-      score += teethScore * 0.4;
-      criteriaCount++;
-    }
+    // O model usa 'nome', não 'name'.
+    // A lógica para 'numberOfTeeth' e 'hasActiveCavities' precisa ser refeita
+    // para usar os dados do 'odontograma'.
 
-    // 2. Comparação do status de cáries (30% do peso total)
-    if (
-      patient1.hasActiveCavities !== undefined &&
-      patient2.hasActiveCavities !== undefined
-    ) {
-      const cariesScore =
-        patient1.hasActiveCavities === patient2.hasActiveCavities ? 100 : 0;
-      score += cariesScore * 0.3;
-      criteriaCount++;
-    }
+    /*
+    const teethScore = calculateTeethSimilarity(patient1.numberOfTeeth, patient2.numberOfTeeth);
+    score += teethScore * 0.4;
 
-    // 3. Status de identificação (30% do peso total)
-    const identificationScore = !patient1.name && patient2.name ? 100 : 0;
-    score += identificationScore * 0.3;
-    criteriaCount++;
+    const cariesScore = patient1.hasActiveCavities === patient2.hasActiveCavities ? 100 : 0;
+    score += cariesScore * 0.3;
+    */
 
-    // Se não houver critérios suficientes para comparação, retorna 0
-    if (criteriaCount === 0) return 0;
-
-    // Retorna a pontuação final arredondada
-    return Math.round(score);
+    return score; // Retornando 0 para evitar erros.
   }
 
-  // Encontra possíveis correspondências para um paciente não identificado
   static findPotentialMatches(
     unidentifiedPatient,
     identifiedPatients,
     threshold = 50
   ) {
-    if (!unidentifiedPatient || !identifiedPatients) return [];
-
-    const matches = identifiedPatients.map((identifiedPatient) => ({
-      patient: identifiedPatient,
-      similarityScore: this.calculateSimilarityScore(
-        unidentifiedPatient,
-        identifiedPatient
-      ),
-      comparisonDetails: {
-        teeth: {
-          unidentified: unidentifiedPatient.numberOfTeeth,
-          identified: identifiedPatient.numberOfTeeth,
-          matches:
-            unidentifiedPatient.numberOfTeeth ===
-            identifiedPatient.numberOfTeeth,
-        },
-        caries: {
-          unidentified: unidentifiedPatient.hasActiveCavities,
-          identified: identifiedPatient.hasActiveCavities,
-          matches:
-            unidentifiedPatient.hasActiveCavities ===
-            identifiedPatient.hasActiveCavities,
-        },
-      },
-    }));
-
-    // Filtra e ordena as correspondências por pontuação
-    return matches
-      .filter((match) => match.similarityScore >= threshold)
-      .sort((a, b) => b.similarityScore - a.similarityScore);
+    // Esta função depende de calculateSimilarityScore, portanto, também não funcionará
+    // corretamente sem uma nova lógica de comparação.
+    return []; // Retornando um array vazio por enquanto.
   }
 
-  // Busca correspondências para todos os pacientes não identificados
   static async findAllMatches(patients) {
-    // Filtra pacientes não identificados e identificados
-    const unidentifiedPatients = patients.filter((p) => !p.name);
-    const identifiedPatients = patients.filter((p) => p.name);
-
-    // Para cada paciente não identificado, busca correspondências
-    const allMatches = unidentifiedPatients.map((unidentifiedPatient) => ({
-      unidentifiedPatient,
-      matches: this.findPotentialMatches(
-        unidentifiedPatient,
-        identifiedPatients
-      ),
-    }));
-
-    // Retorna apenas os resultados que têm correspondências
-    return allMatches.filter((result) => result.matches.length > 0);
+    // Esta é a função principal que seria chamada pela interface.
+    // Ela também depende da lógica acima.
+    return []; // Retornando um array vazio por enquanto.
   }
 }
 
