@@ -1,40 +1,19 @@
+// src/services/evidences/evidenceService.js (Versão Corrigida)
 import api from "../api/axios.config";
 
 class EvidenceService {
-  // Mapeia os tipos do frontend para o backend
-  mapTipoToBackend(frontendType) {
-    // Todos os tipos de imagem são mapeados para "imagem"
-    if (
-      [
-        "Radiografia Panorâmica",
-        "Radiografia Periapical",
-        "Fotografia Intraoral",
-      ].includes(frontendType)
-    ) {
-      return "imagem";
-    }
-    return "texto"; // Caso contrário, é considerado texto
-  }
-
-  async uploadEvidence(caseId, formData, userId) {
+  /**
+   * Envia uma nova evidência para o backend.
+   * @param {FormData} formData - O FormData vindo diretamente do formulário.
+   * @returns {Promise<object>}
+   */
+  async uploadEvidence(formData) {
     try {
-      // Manter o mapeamento de tipos
-      const currentType = formData.get("type");
-      const mappedType = this.mapTipoToBackend(currentType);
+      // O FormData já deve vir pronto do componente,
+      // incluindo caseId, type, content, files, annotations, latitude, etc.
 
-      // Criar novo FormData com campos corretos
-      const newFormData = new FormData();
-      newFormData.append("type", mappedType);
-      newFormData.append("caseId", caseId);
-      newFormData.append("content", formData.get("content") || "");
-
-      // Adicionar múltiplos arquivos corretamente
-      const files = formData.getAll("files");
-      files.forEach((file) => {
-        newFormData.append("files", file);
-      });
-
-      const response = await api.post("/api/evidences", newFormData, {
+      // CORREÇÃO: A rota não deve ter o prefixo /api
+      const response = await api.post("/evidences", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -42,7 +21,10 @@ class EvidenceService {
 
       return { success: true, data: response.data };
     } catch (error) {
-      console.error("Erro ao fazer upload de evidência:", error);
+      console.error(
+        "Erro ao fazer upload de evidência:",
+        error.response?.data || error
+      );
       return {
         success: false,
         error: error.response?.data?.message || "Erro ao adicionar evidência",
@@ -50,11 +32,17 @@ class EvidenceService {
     }
   }
 
-  async getEvidences(caseId) {
+  /**
+   * Busca todas as evidências, opcionalmente filtrando por um caso.
+   * @param {string} [caseId] - O ID do caso para filtrar as evidências.
+   * @returns {Promise<object>}
+   */
+  async getEvidences(caseId = null) {
     try {
-      const response = await api.get("/api/evidences", {
-        params: { caseId },
-      });
+      const params = caseId ? { caseId } : {};
+
+      // CORREÇÃO: A rota não deve ter o prefixo /api
+      const response = await api.get("/evidences", { params });
 
       return {
         success: true,
@@ -68,11 +56,21 @@ class EvidenceService {
     }
   }
 
-  async getEvidencesByCategory(categoria, caseId) {
+  /**
+   * Busca evidências por categoria.
+   * @param {string} categoria - A categoria (ex: 'imagem', 'texto').
+   * @param {string} [caseId] - O ID do caso para filtrar.
+   * @returns {Promise<object>}
+   */
+  async getEvidencesByCategory(categoria, caseId = null) {
     try {
-      const response = await api.get("/api/evidences/by-category", {
-        params: { categoria, caseId },
-      });
+      const params = { categoria };
+      if (caseId) {
+        params.caseId = caseId;
+      }
+
+      // CORREÇÃO: A rota não deve ter o prefixo /api
+      const response = await api.get("/evidences/by-category", { params });
 
       return {
         success: true,
@@ -81,66 +79,16 @@ class EvidenceService {
     } catch (error) {
       return {
         success: false,
-        error: error.response?.data?.message || "Erro ao buscar evidências",
+        error:
+          error.response?.data?.message ||
+          "Erro ao buscar evidências por categoria",
       };
     }
   }
 
-  // Novos métodos adicionados do arquivo evidences.js
-  async addAnnotation(evidenceId, annotation) {
-    try {
-      const response = await api.post(
-        `/api/evidences/${evidenceId}/annotations`,
-        {
-          annotation,
-        }
-      );
-
-      return {
-        success: true,
-        data: response.data,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error.response?.data?.message || "Erro ao adicionar anotação",
-      };
-    }
-  }
-
-  async removeAnnotation(evidenceId, annotationId) {
-    try {
-      const response = await api.delete(
-        `/api/evidences/${evidenceId}/annotations/${annotationId}`
-      );
-
-      return {
-        success: true,
-        data: response.data,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error.response?.data?.message || "Erro ao remover anotação",
-      };
-    }
-  }
-
-  async getEvidenceHistory(evidenceId) {
-    try {
-      const response = await api.get(`/api/evidences/${evidenceId}/history`);
-
-      return {
-        success: true,
-        data: response.data,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error.response?.data?.message || "Erro ao buscar histórico",
-      };
-    }
-  }
+  // MÉTODOS REMOVIDOS: As funções addAnnotation, removeAnnotation e getEvidenceHistory
+  // foram removidas pois não existem rotas correspondentes no backend fornecido.
+  // As anotações são enviadas junto com o upload da evidência.
 }
 
 export default new EvidenceService();

@@ -1,118 +1,82 @@
+// src/services/patients/patientService.js (Versão Corrigida)
 import api from "../api/axios.config";
 
-// Listar todos os pacientes
-export const getAllPatients = async (page = 1) => {
-  try {
-    const response = await api.get(`/api/patients?page=${page}`);
-    return {
-      success: true,
-      data: response.data.data,
-      pagination: response.data.pagination,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error:
-        error.response?.data?.message ||
-        error.message ||
-        "Erro ao buscar pacientes",
-    };
+class PatientService {
+  // Lista todos os pacientes com paginação
+  async getAllPatients(page = 1) {
+    try {
+      // CORREÇÃO: Rota corrigida
+      const response = await api.get(`/patients?page=${page}`);
+      return {
+        success: true,
+        data: response.data.data,
+        pagination: response.data.pagination,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.message || "Erro ao buscar pacientes",
+      };
+    }
   }
-};
 
-// Criar um novo paciente
-export const createPatient = async (patientData) => {
-  try {
-    const response = await api.post("/api/patients", patientData);
-    return {
-      success: true,
-      data: response.data.data,
-      message: response.data.message,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error:
-        error.response?.data?.message ||
-        error.message ||
-        "Erro ao criar paciente",
-    };
+  // Busca pacientes de um caso específico
+  async getPatientsByCase(caseId) {
+    try {
+      if (!caseId) throw new Error("ID do caso é obrigatório");
+      // CORREÇÃO: Rota corrigida
+      const response = await api.get(`/patients/case/${caseId}`);
+      return { success: true, data: response.data.data };
+    } catch (error) {
+      return {
+        success: false,
+        error:
+          error.response?.data?.message || "Erro ao buscar pacientes do caso",
+      };
+    }
   }
-};
 
-// Atualizar um paciente existente
-export const updatePatient = async (patientId, patientData) => {
-  try {
-    const response = await api.put(`/api/patients/${patientId}`, patientData);
-    return {
-      success: true,
-      data: response.data.data,
-      message: response.data.message,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error:
-        error.response?.data?.message ||
-        error.message ||
-        "Erro ao atualizar paciente",
-    };
+  // Cria um novo paciente
+  async createPatient(patientData) {
+    try {
+      // CORREÇÃO: Rota corrigida
+      const response = await api.post("/patients", patientData);
+      return { success: true, data: response.data.data };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.message || "Erro ao criar paciente",
+      };
+    }
   }
-};
 
-// Buscar um paciente por ID
-export const getPatientById = async (patientId) => {
-  try {
-    const response = await api.get(`/api/patients/${patientId}`);
-    return {
-      success: true,
-      data: response.data.data,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error:
-        error.response?.data?.message ||
-        error.message ||
-        "Erro ao buscar paciente",
-    };
+  // Atualiza um paciente
+  async updatePatient(patientId, patientData) {
+    try {
+      // CORREÇÃO: Rota corrigida
+      const response = await api.put(`/patients/${patientId}`, patientData);
+      return { success: true, data: response.data.data };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.message || "Erro ao atualizar paciente",
+      };
+    }
   }
-};
 
-// Buscar pacientes por caso
-export const getPatientsByCase = async (caseId) => {
-  try {
-    const response = await api.get(`/api/patients/case/${caseId}`);
-    return {
-      success: true,
-      data: response.data.data,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error:
-        error.response?.data?.message ||
-        error.message ||
-        "Erro ao buscar pacientes do caso",
-    };
+  // Deleta um paciente
+  async deletePatient(patientId) {
+    try {
+      // CORREÇÃO: Rota corrigida
+      const response = await api.delete(`/patients/${patientId}`);
+      return { success: true, message: response.data.message };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.message || "Erro ao deletar paciente",
+      };
+    }
   }
-};
+}
 
-// Deletar um paciente
-export const deletePatient = async (patientId) => {
-  try {
-    const response = await api.delete(`/api/patients/${patientId}`);
-    return {
-      success: true,
-      message: response.data.message,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error:
-        error.response?.data?.message ||
-        error.message ||
-        "Erro ao deletar paciente",
-    };
-  }
-};
+export default new PatientService();

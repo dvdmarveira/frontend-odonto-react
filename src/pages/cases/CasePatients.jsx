@@ -1,176 +1,224 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
-import { Plus, MagnifyingGlass } from "@phosphor-icons/react";
+import {
+  Plus,
+  PencilSimple,
+  Trash,
+  CaretDown,
+  CaretUp,
+  Users,
+  GenderIntersex,
+  Cake,
+  IdentificationCard,
+  MapPin,
+  NotePencil,
+  Tooth,
+} from "@phosphor-icons/react";
+import PatientService from "../../services/patients/patientService";
+import AddPatientModal from "../../components/modals/AddPatientModal";
 import { toast } from "react-hot-toast";
-import { getPatientsByCase } from "../../services/patients/patientService";
-import PatientModal from "../../components/modals/PatientModal";
+import { useAuth } from "../../contexts/useAuth";
 
-const CasePatients = () => {
-  const { caseId } = useParams();
+const PatientDetails = ({ patient }) => {
+  const formatKey = (key) => {
+    return key.replace("_", " ").replace(/\b\w/g, (char) => char.toUpperCase());
+  };
+  const renderOdontogramValue = (value) => {
+    if (typeof value === "object" && value !== null) {
+      return (
+        <span className="text-gray-500 text-xs ml-2">
+          (
+          {Object.entries(value)
+            .map(([key, val]) => `${formatKey(key)}: ${val}`)
+            .join("; ")}
+          )
+        </span>
+      );
+    }
+    return String(value);
+  };
+  return (
+    <div className="mt-4 pt-4 border-t border-gray-200 text-sm text-gray-700 space-y-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3">
+        <div className="flex items-center gap-2">
+          <GenderIntersex size={16} className="text-gray-500" />
+          <strong>Gênero:</strong> {patient.genero}
+        </div>
+        <div className="flex items-center gap-2">
+          <Cake size={16} className="text-gray-500" />
+          <strong>Idade:</strong> {patient.idade}
+        </div>
+        <div className="flex items-center gap-2">
+          <IdentificationCard size={16} className="text-gray-500" />
+          <strong>Documento:</strong> {patient.documento || "N/A"}
+        </div>
+        <div className="flex items-center gap-2">
+          <Users size={16} className="text-gray-500" />
+          <strong>Cor/Etnia:</strong> {patient.corEtnia || "N/A"}
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+        <MapPin size={16} className="text-gray-500" />
+        <strong>Endereço:</strong> {patient.endereco || "N/A"}
+      </div>
+      <div className="flex items-start gap-2">
+        <NotePencil size={16} className="text-gray-500 mt-0.5" />
+        <strong>Anotações Anatômicas:</strong>{" "}
+        <span className="flex-1">{patient.anotacoesAnatomicas || "N/A"}</span>
+      </div>
+
+      {patient.odontograma && Object.keys(patient.odontograma).length > 0 && (
+        <div className="mt-2">
+          <strong className="flex items-center gap-2 mb-1">
+            <Tooth size={16} className="text-gray-500" />
+            Odontograma:
+          </strong>
+          <div className="bg-gray-50 p-4 rounded-md grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-2">
+            {Object.entries(patient.odontograma).map(([key, value]) => (
+              <div key={key}>
+                <span className="font-semibold">{formatKey(key)}:</span>
+                {renderOdontogramValue(value)}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const CasePatients = ({ caseId }) => {
   const [patients, setPatients] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState(null);
+  const [expandedPatientId, setExpandedPatientId] = useState(null);
+  const { user } = useAuth(); // Obter o usuário logado
 
+  const loadPatients = async () => {
+    if (!caseId) return;
+    setIsLoading(true);
+    const response = await PatientService.getPatientsByCase(caseId);
+    if (response.success) {
+      setPatients(response.data);
+    } else {
+      toast.error(response.error || "Erro ao carregar pacientes.");
+    }
+    setIsLoading(false);
+  };
   useEffect(() => {
     loadPatients();
   }, [caseId]);
-
-  const loadPatients = async () => {
-    try {
-      setIsLoading(true);
-      const response = await getPatientsByCase(caseId);
-
-      if (response.success) {
-        setPatients(response.data);
-      } else {
-        toast.error(response.error || "Erro ao carregar pacientes");
-      }
-    } catch (error) {
-      console.error("Erro ao carregar pacientes:", error);
-      toast.error("Erro ao carregar pacientes");
-    } finally {
-      setIsLoading(false);
-    }
+  const handleToggleDetails = (patientId) => {
+    setExpandedPatientId(expandedPatientId === patientId ? null : patientId);
   };
-
   const handleAddPatient = () => {
     setSelectedPatient(null);
     setIsModalOpen(true);
   };
-
   const handleEditPatient = (patient) => {
     setSelectedPatient(patient);
     setIsModalOpen(true);
   };
-
-  const handleModalClose = () => {
-    setIsModalOpen(false);
-    setSelectedPatient(null);
+  const handleDeletePatient = async (patientId) => {
+    if (!window.confirm("Tem certeza que deseja desvincular este paciente?"))
+      return;
+    const response = await PatientService.deletePatient(patientId);
+    if (response.success) {
+      toast.success("Paciente removido!");
+      loadPatients();
+    } else {
+      toast.error(response.error || "Erro ao remover paciente.");
+    }
   };
-
   const handleModalSuccess = () => {
+    setIsModalOpen(false);
     loadPatients();
-    handleModalClose();
   };
-
-  const filteredPatients = patients.filter((patient) => {
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      patient.name?.toLowerCase().includes(searchLower) ||
-      patient.identificationStatus?.toLowerCase().includes(searchLower)
-    );
-  });
-
-  if (isLoading) {
-    return (
-      <div className="p-6 text-center">
-        <p>Carregando pacientes...</p>
-      </div>
-    );
-  }
 
   return (
-    <div className="p-6">
-      {/* Header */}
+    <div>
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-red_secondary text-xl font-bold">
+        <h2 className="text-xl font-bold flex items-center gap-2">
+          <Users size={24} className="text-blue_dark" />
           Pacientes do Caso
         </h2>
-        <button
-          onClick={handleAddPatient}
-          className="bg-blue_dark hover:bg-blue_primary text-white font-bold py-2 px-6 rounded-md flex items-center"
-        >
-          <Plus size={18} className="mr-2" />
-          ADICIONAR PACIENTE
-        </button>
-      </div>
-
-      {/* Search Bar */}
-      <div className="mb-6 relative">
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Buscar pacientes..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full p-3 pl-12 rounded-lg border border-gray-300 focus:outline-none focus:border-blue_primary"
-          />
-          <MagnifyingGlass
-            size={20}
-            className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"
-          />
-        </div>
-      </div>
-
-      {/* Patients List */}
-      <div className="grid gap-4">
-        {filteredPatients.length === 0 ? (
-          <div className="text-center py-8 bg-gray-50 rounded-lg">
-            <p className="text-gray-500">Nenhum paciente encontrado</p>
-          </div>
-        ) : (
-          filteredPatients.map((patient) => (
-            <div
-              key={patient._id}
-              className="bg-white rounded-lg shadow-sm p-6 border border-gray-200"
-            >
-              <div className="flex justify-between items-start">
-                <div>
-                  <h3 className="text-lg font-semibold mb-2">
-                    {patient.name || "Paciente não identificado"}
-                  </h3>
-                  <div className="flex gap-2 mb-3">
-                    <span
-                      className={`px-3 py-1 rounded-full text-sm ${
-                        patient.name
-                          ? "bg-green-100 text-green-800"
-                          : "bg-yellow-100 text-yellow-800"
-                      }`}
-                    >
-                      {patient.identificationStatus}
-                    </span>
-                    <span
-                      className={`px-3 py-1 rounded-full text-sm ${
-                        patient.hasActiveCavities
-                          ? "bg-red-100 text-red-800"
-                          : "bg-green-100 text-green-800"
-                      }`}
-                    >
-                      {patient.hasActiveCavities
-                        ? "Com cáries ativas"
-                        : "Sem cáries ativas"}
-                    </span>
-                  </div>
-                  <p className="text-gray-600">
-                    Número de dentes: <strong>{patient.numberOfTeeth}</strong>
-                  </p>
-                  <p className="text-sm text-gray-500 mt-2">
-                    Última atualização:{" "}
-                    {new Date(patient.updatedAt).toLocaleDateString()}
-                  </p>
-                </div>
-                <button
-                  onClick={() => handleEditPatient(patient)}
-                  className="text-blue_dark hover:text-blue_primary"
-                >
-                  <PencilSimple size={24} />
-                </button>
-              </div>
-            </div>
-          ))
+        {user.role !== "assistente" && (
+          <button
+            onClick={handleAddPatient}
+            className="bg-blue_dark text-white font-bold py-2 px-4 rounded-md flex items-center gap-2"
+          >
+            <Plus size={18} />
+            Adicionar Paciente
+          </button>
         )}
       </div>
 
-      {/* Patient Modal */}
-      <PatientModal
-        isOpen={isModalOpen}
-        onClose={handleModalClose}
-        caseId={caseId}
-        patientData={selectedPatient}
-        onSuccess={handleModalSuccess}
-      />
+      {isLoading ? (
+        <p>Carregando...</p>
+      ) : patients.length === 0 ? (
+        <p className="text-gray-500 text-center py-4">
+          Nenhum paciente vinculado.
+        </p>
+      ) : (
+        <div className="space-y-4">
+          {patients.map((patient) => (
+            <div
+              key={patient._id}
+              className="border p-4 rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
+            >
+              <div className="flex justify-between items-start">
+                <div
+                  className="flex-1 cursor-pointer"
+                  onClick={() => handleToggleDetails(patient._id)}
+                >
+                  <div className="flex items-center">
+                    <span className="font-semibold text-lg">
+                      {patient.nome}
+                    </span>
+                    {expandedPatientId === patient._id ? (
+                      <CaretUp className="ml-2 text-blue_dark" />
+                    ) : (
+                      <CaretDown className="ml-2 text-gray-500" />
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-600">NIC: {patient.nic}</p>
+                </div>
+                {user.role !== "assistente" && (
+                  <div className="flex items-center gap-4">
+                    <button
+                      onClick={() => handleEditPatient(patient)}
+                      className="text-blue-600 hover:text-blue-800"
+                      title="Editar"
+                    >
+                      <PencilSimple size={24} />
+                    </button>
+                    <button
+                      onClick={() => handleDeletePatient(patient._id)}
+                      className="text-red-600 hover:text-red-800"
+                      title="Remover"
+                    >
+                      <Trash size={24} />
+                    </button>
+                  </div>
+                )}
+              </div>
+              {expandedPatientId === patient._id && (
+                <PatientDetails patient={patient} />
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {isModalOpen && (
+        <AddPatientModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          caseId={caseId}
+          patientData={selectedPatient}
+          onSuccess={handleModalSuccess}
+        />
+      )}
     </div>
   );
 };

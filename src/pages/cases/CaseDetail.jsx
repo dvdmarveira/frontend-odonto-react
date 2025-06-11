@@ -1,336 +1,155 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import {
-  Eye,
-  Download,
+  DownloadSimple,
+  ArrowLeft,
+  Info,
+  Scroll,
   PencilSimple,
-  Trash,
-  Plus,
 } from "@phosphor-icons/react";
 import { toast } from "react-hot-toast";
 import CaseService from "../../services/cases/caseService";
-import evidenceService from "../../services/evidences/evidenceService";
-import reportService from "../../services/reports/reportService";
+import ReportService from "../../services/reports/reportService";
+import CasePatients from "./CasePatients";
+import CaseEvidences from "./CaseEvidences";
+import { useAuth } from "../../contexts/useAuth";
 
 const CaseDetail = () => {
   const { caseId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [caseData, setCaseData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-
-  useEffect(() => {
-    loadCaseDetails();
-  }, [caseId]);
 
   const loadCaseDetails = async () => {
-    try {
-      setIsLoading(true);
+    setIsLoading(true);
+    const response = await CaseService.getCaseById(caseId);
 
-      // Carregar dados básicos do caso
-      const caseResponse = await CaseService.getCaseById(caseId);
-      if (!caseResponse.success) {
-        throw new Error(caseResponse.error);
-      }
-
-      // Carregar evidências separadamente
-      const evidencesResponse = await evidenceService.getEvidences(caseId);
-      const evidences = evidencesResponse.success ? evidencesResponse.data : [];
-
-      // Carregar documentos separadamente
-      const documentsResponse = await CaseService.getCaseDocuments(caseId);
-      const documents = documentsResponse.success ? documentsResponse.data : [];
-
-      // Carregar relatórios separadamente
-      const reportsResponse = await reportService.getReports({ caseId });
-      const reports = reportsResponse.success ? reportsResponse.data : [];
-
-      // Combinar todos os dados
-      setCaseData({
-        ...caseResponse.data,
-        evidences,
-        documents,
-        reports,
-      });
-    } catch (error) {
-      console.error("Erro detalhado:", error);
-      toast.error(error.message || "Erro ao carregar detalhes do caso");
+    if (response.success) {
+      setCaseData(response.data);
+    } else {
+      toast.error(response.error || "Erro ao carregar detalhes do caso.");
       navigate("/cases");
-    } finally {
-      setIsLoading(false);
+    }
+    setIsLoading(false);
+  };
+
+  useEffect(() => {
+    if (caseId) {
+      loadCaseDetails();
+    }
+  }, [caseId, navigate]);
+
+  const handleGenerateReport = async () => {
+    // 1. A MENSAGEM DE CARREGAMENTO É EXIBIDA AQUI
+    toast.loading("Gerando laudo...");
+
+    // O serviço que gera o PDF é chamado
+    const result = await ReportService.generateReportFromCase(caseId);
+
+    // 2. A MENSAGEM DE CARREGAMENTO É REMOVIDA
+    toast.dismiss();
+
+    // 3. UMA MENSAGEM DE SUCESSO OU ERRO É EXIBIDA
+    if (result.success) {
+      toast.success("Download do laudo iniciado!");
+    } else {
+      toast.error(result.error || "Falha ao gerar o laudo.");
     }
   };
 
-  const handleEditCase = () => {
-    console.log("Editar caso");
-  };
-
-  const handleDeleteCase = () => {
-    if (window.confirm("Tem certeza que deseja excluir este caso?")) {
-      console.log("Excluir caso");
-      navigate("/cases");
-    }
-  };
-
-  const handleDownloadReport = () => {
-    console.log("Download do relatório");
-  };
-
-  const handleAddEvidence = () => {
-    console.log("Adicionar evidência");
-  };
-
-  const handleViewEvidence = (evidenceId) => {
-    console.log(`Visualizar evidência ${evidenceId}`);
-  };
-
-  const handleAddDocument = () => {
-    console.log("Adicionar documento");
-  };
-
-  if (isLoading) {
-    return (
-      <div className="p-6 text-center">
-        <p>Carregando dados do caso...</p>
-      </div>
-    );
-  }
+  if (isLoading) return <p className="p-6 text-center">Carregando...</p>;
+  if (!caseData) return <p className="p-6 text-center">Caso não encontrado.</p>;
 
   return (
-    <div className="p-6">
-      {/* Action Buttons */}
-      <div className="flex justify-between mb-8">
-        <button
-          onClick={handleEditCase}
-          className="bg-blue_dark hover:bg-blue_primary text-white font-bold py-2 px-6 rounded-md"
-        >
-          EDITAR CASO
-        </button>
-        <button
-          onClick={handleDeleteCase}
-          className="bg-blue_dark hover:bg-blue_primary text-white font-bold py-2 px-6 rounded-md"
-        >
-          EXCLUIR CASO
-        </button>
-        <button
-          onClick={handleDownloadReport}
-          className="bg-blue_dark hover:bg-blue_primary text-white font-bold py-2 px-6 rounded-md"
-        >
-          BAIXAR RELATÓRIO
-        </button>
-      </div>
+    <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
+      <div className="max-w-7xl mx-auto">
+        {/* Cabeçalho */}
+        <div className="mb-8">
+          <Link
+            to="/cases"
+            className="text-sm text-blue_dark hover:underline flex items-center mb-2"
+          >
+            <ArrowLeft size={16} className="mr-1" />
+            Voltar para a lista de casos
+          </Link>
+          <div className="md:flex justify-between items-center">
+            <h1 className="text-4xl font-bold text-gray-800">
+              {caseData.title}
+            </h1>
+            <div className="flex gap-4 mt-4 md:mt-0">
+              {user.role !== "assistente" && (
+                <Link to={`/cases/${caseId}/edit`}>
+                  <button className="bg-white hover:bg-gray-100 text-gray-800 font-bold py-2 px-4 rounded-lg flex items-center gap-2 shadow-md border transition-colors">
+                    <PencilSimple size={20} />
+                    Editar Caso
+                  </button>
+                </Link>
+              )}
 
-      {/* Case Header */}
-      <div className="mb-6">
-        <h2 className="text-red_secondary text-xl font-bold mb-4">
-          Caso Pericial N° {caseData.id} - {caseData.title}
-        </h2>
-
-        <div className="grid grid-cols-1 text-sm">
-          <div>
-            <p>
-              <span className="font-bold">Status Atual:</span> {caseData.status}
-            </p>
-            <p>
-              <span className="font-bold">Data e hora de Abertura:</span>{" "}
-              {caseData.openDate} {caseData.openTime}
-            </p>
-          </div>
-          <div>
-            <p>
-              <span className="font-bold">Perito Responsável:</span>{" "}
-              {caseData.expert}
-            </p>
-            <p>
-              <span className="font-bold">Tipo de Caso:</span> {caseData.type}
-            </p>
+              <button
+                onClick={handleGenerateReport}
+                className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2 shadow-md transition-transform hover:scale-105"
+              >
+                <DownloadSimple size={20} />
+                Gerar Laudo (PDF)
+              </button>
+            </div>
           </div>
         </div>
-      </div>
 
-      <hr className="my-6 border-gray-300" />
-
-      {/* General Info Section */}
-      <div className="mb-6">
-        <h3 className="text-lg font-bold mb-3">Informações Gerais do Caso</h3>
-        <p className="text-gray-700 mb-4">{caseData.generalInfo}</p>
-
-        <div className="grid grid-cols-1 mt-4">
-          {caseData?.occurrence?.location && (
-            <div>
+        <div className="space-y-8">
+          {/* Card de Informações Gerais */}
+          <div className="bg-white p-6 rounded-xl shadow-lg">
+            <h2 className="text-xl font-bold text-gray-700 mb-4 flex items-center gap-2">
+              <Info size={24} className="text-blue_dark" />
+              Informações Gerais
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 text-gray-600">
               <p>
-                <span className="font-bold">Local de Ocorrência:</span>{" "}
-                {caseData.occurrence.location}
+                <strong>Descrição:</strong> {caseData.description}
               </p>
               <p>
-                <span className="font-bold">Data da Descoberta do Corpo:</span>{" "}
-                {caseData.occurrence.discoveryDate}
+                <strong>Status:</strong> {caseData.status?.replace("_", " ")}
+              </p>
+              <p>
+                <strong>Tipo:</strong> {caseData.type}
+              </p>
+              <p>
+                <strong>Responsável:</strong>{" "}
+                {caseData.responsible?.name || "Não atribuído"}
+              </p>
+              <p>
+                <strong>Histórico:</strong> {caseData.historico || "N/A"}
+              </p>
+              <p>
+                <strong>Análises:</strong> {caseData.analises || "N/A"}
               </p>
             </div>
-          )}
-          <div>
-            <p>
-              <span className="font-bold">Histórico:</span>{" "}
-              {caseData.occurrence.history}
-            </p>
           </div>
-        </div>
-      </div>
 
-      <hr className="my-6 border-gray-300" />
-
-      {/* Evidences Section */}
-      <div className="mb-6">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-bold">Evidências Vinculadas ao Caso</h3>
-          <button
-            onClick={handleAddEvidence}
-            className="bg-blue_dark hover:bg-blue_primary text-white font-bold py-2 px-6 rounded-md flex items-center"
-          >
-            <Plus size={18} className="mr-2" />
-            ADICIONAR EVIDÊNCIA
-          </button>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full bg-blue_tertiary rounded-lg overflow-hidden">
-            <tbody>
-              {caseData.evidences.map((evidence) => (
-                <tr
-                  key={evidence.id}
-                  className="border-b border-blue_primary border-opacity-20"
-                >
-                  <td className="py-4 px-4 text-white">
-                    Caso Pericial N°{evidence.caseNumber}
-                  </td>
-                  <td className="py-4 px-4 text-white">
-                    {evidence.description}
-                  </td>
-                  <td className="py-4 px-4 text-center text-white">
-                    {evidence.date}
-                  </td>
-                  <td className="py-4 px-4 text-right">
-                    <button
-                      onClick={() => handleViewEvidence(evidence.id)}
-                      className="bg-red_secondary hover:bg-opacity-90 text-white px-4 py-1 rounded-full inline-flex items-center"
-                    >
-                      <Eye size={16} className="mr-1" />
-                      Visualizar
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <hr className="my-6 border-gray-300" />
-
-      {/* Analysis Section */}
-      <div className="mb-6">
-        <h3 className="text-lg font-bold mb-3">Análises e Comparações</h3>
-        <p className="mb-3">Foram realizados os seguintes procedimentos:</p>
-
-        <ol className="list-decimal list-inside pl-4 mb-4">
-          {caseData.analyses.map((analysis) => (
-            <li key={analysis.id} className="mb-1">
-              {analysis.description}
-              <span className="text-red_secondary ml-3">({analysis.date})</span>
-            </li>
-          ))}
-        </ol>
-
-        {/* Partial Result */}
-        <div className="mb-6">
-          <h3 className="text-lg font-bold mb-3">Resultado Parcial</h3>
-          <div className="bg-blue_tertiary text-white p-6 rounded-lg">
-            <ul className="list-disc list-inside">
-              {caseData.partialResult.map((result, index) => (
-                <li key={index} className="mb-2">
-                  {result}
-                </li>
-              ))}
-            </ul>
-            <p className="mt-4 text-right text-sm">
-              Adicionado por: {caseData.resultAddedBy}
-            </p>
+          {/* Card de Pacientes */}
+          <div className="bg-white p-6 rounded-xl shadow-lg">
+            <CasePatients caseId={caseId} />
           </div>
-        </div>
-      </div>
 
-      <hr className="my-6 border-gray-300" />
-
-      {/* Documents Section */}
-      <div className="mb-6">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-bold">Laudos e Documentação</h3>
-          <button
-            onClick={handleAddDocument}
-            className="bg-blue_dark hover:bg-blue_primary text-white font-bold py-2 px-6 rounded-md flex items-center"
-          >
-            <Plus size={18} className="mr-2" />
-            ADICIONAR
-          </button>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full bg-blue_tertiary rounded-lg overflow-hidden">
-            <tbody>
-              {caseData.documents.map((doc) => (
-                <tr
-                  key={doc.id}
-                  className="border-b border-blue_primary border-opacity-20"
-                >
-                  <td className="py-4 px-4 text-white">{doc.title}</td>
-                  <td className="py-4 px-4 text-white">{doc.annexDate}</td>
-                  <td className="py-4 px-4 text-right">
-                    {doc.status === "Anexado" ? (
-                      <button className="bg-red_secondary hover:bg-opacity-90 text-white px-4 py-1 rounded-full inline-flex items-center">
-                        <Eye size={16} className="mr-1" />
-                        Visualizar
-                      </button>
-                    ) : (
-                      <span className="bg-red_secondary bg-opacity-30 text-white px-4 py-1 rounded-full">
-                        Em andamento
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <hr className="my-6 border-gray-300" />
-
-      {/* Comments Section */}
-      <div className="mb-6">
-        <h3 className="text-lg font-bold mb-3">Comentários:</h3>
-
-        {caseData.comments.map((comment) => (
-          <div
-            key={comment.id}
-            className="bg-blue_dark text-white p-6 rounded-lg mb-4"
-          >
-            <p className="mb-3">{comment.text}</p>
-            <p className="text-right text-sm">
-              Adicionado por: {comment.author}
-            </p>
+          {/* Card de Evidências */}
+          <div className="bg-white p-6 rounded-xl shadow-lg">
+            <CaseEvidences
+              caseId={caseId}
+              evidences={caseData.evidences}
+              onEvidenceAdded={loadCaseDetails}
+            />
           </div>
-        ))}
-      </div>
 
-      {/* Last Update */}
-      <div className="text-sm text-gray-600 mt-10 flex justify-between">
-        <div>
-          <span className="font-bold">Última Atualização:</span>{" "}
-          {caseData.lastUpdate}
-        </div>
-        <div>
-          <span className="font-bold">Atualizado por:</span>{" "}
-          {caseData.updatedBy}
+          {/* Card de Histórico de Laudos */}
+          <div className="bg-white p-6 rounded-xl shadow-lg">
+            <h2 className="text-xl font-bold text-gray-700 flex items-center gap-2">
+              <Scroll size={24} className="text-blue_dark" />
+              Histórico de Laudos
+            </h2>
+            <p className="text-gray-500 mt-4">Em breve...</p>
+          </div>
         </div>
       </div>
     </div>
