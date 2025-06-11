@@ -1,4 +1,3 @@
-// src/pages/cases/CaseEvidences.jsx (Versão final com endereço e link do mapa)
 import React, { useState } from "react";
 import {
   Plus,
@@ -10,10 +9,9 @@ import {
   CaretUp,
 } from "@phosphor-icons/react";
 import AddEvidenceForm from "../../components/AddEvidenceForm";
+import { useAuth } from "../../contexts/useAuth";
 
-// Componente interno para mostrar os detalhes da evidência
 const EvidenceDetails = ({ evidence }) => {
-  // A URL do seu servidor backend para servir as imagens
   const BACKEND_URL = "http://localhost:5000";
 
   const getImageUrl = (path) => {
@@ -38,7 +36,6 @@ const EvidenceDetails = ({ evidence }) => {
 
   return (
     <div className="mt-4 pt-4 border-t border-gray-200 text-sm text-gray-700 space-y-3">
-      {/* Exibição para IMAGENS */}
       {evidence.type === "imagem" && evidence.filePaths?.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
           {evidence.filePaths.map((filePath, index) => (
@@ -58,14 +55,12 @@ const EvidenceDetails = ({ evidence }) => {
         </div>
       )}
 
-      {/* Exibição para TEXTO */}
       {evidence.type === "texto" && (
         <p className="bg-gray-100 p-3 rounded-md my-2 whitespace-pre-wrap">
           {evidence.content}
         </p>
       )}
 
-      {/* Anotações e Localização */}
       {evidence.annotations?.length > 0 && (
         <p>
           <strong>Anotações:</strong> {evidence.annotations.join(", ")}
@@ -99,6 +94,7 @@ const EvidenceDetails = ({ evidence }) => {
 const CaseEvidences = ({ caseId, evidences = [], onEvidenceAdded }) => {
   const [showEvidenceForm, setShowEvidenceForm] = useState(false);
   const [expandedEvidenceId, setExpandedEvidenceId] = useState(null);
+  const { user } = useAuth(); // Obter o usuário logado
 
   const handleToggleDetails = (evidenceId) => {
     setExpandedEvidenceId(
@@ -113,16 +109,18 @@ const CaseEvidences = ({ caseId, evidences = [], onEvidenceAdded }) => {
           <Archive size={24} className="text-blue_dark" />
           Evidências
         </h2>
-        <button
-          onClick={() => setShowEvidenceForm(!showEvidenceForm)}
-          className="bg-blue_dark text-white font-bold py-2 px-4 rounded-md flex items-center gap-2"
-        >
-          <Plus size={18} />
-          {showEvidenceForm ? "Ocultar Formulário" : "Adicionar Evidência"}
-        </button>
+        {user.role !== "assistente" && (
+          <button
+            onClick={() => setShowEvidenceForm(!showEvidenceForm)}
+            className="bg-blue_dark text-white font-bold py-2 px-4 rounded-md flex items-center gap-2"
+          >
+            <Plus size={18} />
+            {showEvidenceForm ? "Ocultar Formulário" : "Adicionar Evidência"}
+          </button>
+        )}
       </div>
 
-      {showEvidenceForm && (
+      {showEvidenceForm && user.role !== "assistente" && (
         <AddEvidenceForm caseId={caseId} onEvidenceAdded={onEvidenceAdded} />
       )}
 

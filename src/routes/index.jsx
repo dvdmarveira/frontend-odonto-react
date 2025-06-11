@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "../contexts/useAuth";
 import Layout from "../components/Layout";
+import { toast } from "react-hot-toast"; // 1. Importar o toast
 
 // --- PÁGINAS PÚBLICAS ---
 import Login from "../pages/Login";
@@ -19,11 +20,8 @@ import Dashboard from "../pages/Dashboard";
 import Cases from "../pages/cases/Cases";
 import CaseDetail from "../pages/cases/CaseDetail";
 import AddCase from "../pages/cases/AddCase";
-import Patients from "../pages/patients/Patients";
-import Evidences from "../pages/evidences/Evidences";
-import Reports from "../pages/reports/Reports";
 import Users from "../pages/users/AdminUsers";
-import UserForm from "../pages/users/UserManagDetail";
+import UserForm from "../pages/users/UserForm";
 
 // Componente para proteger rotas
 const ProtectedRoute = ({ children, roles = [] }) => {
@@ -33,7 +31,10 @@ const ProtectedRoute = ({ children, roles = [] }) => {
     return <Navigate to="/login" replace />;
   }
 
+  // 2. LÓGICA ATUALIZADA AQUI
   if (roles.length > 0 && !roles.includes(user.role)) {
+    // Exibe o aviso de erro antes de redirecionar
+    toast.error("Você não tem permissão para acessar esta página.");
     return <Navigate to="/dashboard" replace />;
   }
 
@@ -87,7 +88,7 @@ const AppRoutes = () => {
       <Route
         path="/cases/add"
         element={
-          <ProtectedRoute roles={["admin", "perito"]}>
+          <ProtectedRoute roles={["admin", "perito", "assistente"]}>
             <AddCase />
           </ProtectedRoute>
         }
@@ -100,43 +101,11 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
-
-      {/* --- ROTA DE EDIÇÃO ADICIONADA AQUI --- */}
       <Route
         path="/cases/:caseId/edit"
         element={
           <ProtectedRoute roles={["admin", "perito"]}>
             <AddCase />
-          </ProtectedRoute>
-        }
-      />
-
-      {/* Pacientes */}
-      <Route
-        path="/patients"
-        element={
-          <ProtectedRoute>
-            <Patients />
-          </ProtectedRoute>
-        }
-      />
-
-      {/* Evidências */}
-      <Route
-        path="/evidences"
-        element={
-          <ProtectedRoute>
-            <Evidences />
-          </ProtectedRoute>
-        }
-      />
-
-      {/* Laudos */}
-      <Route
-        path="/reports"
-        element={
-          <ProtectedRoute>
-            <Reports />
           </ProtectedRoute>
         }
       />

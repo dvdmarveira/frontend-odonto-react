@@ -1,4 +1,3 @@
-// src/pages/cases/CasePatients.jsx (Versão final com ícones nos detalhes)
 import React, { useState, useEffect } from "react";
 import {
   Plus,
@@ -7,7 +6,6 @@ import {
   CaretDown,
   CaretUp,
   Users,
-  // --- ÍCONES NOVOS PARA OS DETALHES ---
   GenderIntersex,
   Cake,
   IdentificationCard,
@@ -18,8 +16,8 @@ import {
 import PatientService from "../../services/patients/patientService";
 import AddPatientModal from "../../components/modals/AddPatientModal";
 import { toast } from "react-hot-toast";
+import { useAuth } from "../../contexts/useAuth";
 
-// Componente interno para exibir os detalhes do paciente com ícones
 const PatientDetails = ({ patient }) => {
   const formatKey = (key) => {
     return key.replace("_", " ").replace(/\b\w/g, (char) => char.toUpperCase());
@@ -28,10 +26,10 @@ const PatientDetails = ({ patient }) => {
     if (typeof value === "object" && value !== null) {
       return (
         <span className="text-gray-500 text-xs ml-2">
-          ({" "}
+          (
           {Object.entries(value)
             .map(([key, val]) => `${formatKey(key)}: ${val}`)
-            .join("; ")}{" "}
+            .join("; ")}
           )
         </span>
       );
@@ -94,9 +92,9 @@ const CasePatients = ({ caseId }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [expandedPatientId, setExpandedPatientId] = useState(null);
+  const { user } = useAuth(); // Obter o usuário logado
 
   const loadPatients = async () => {
-    /* ... (código inalterado) ... */
     if (!caseId) return;
     setIsLoading(true);
     const response = await PatientService.getPatientsByCase(caseId);
@@ -122,7 +120,6 @@ const CasePatients = ({ caseId }) => {
     setIsModalOpen(true);
   };
   const handleDeletePatient = async (patientId) => {
-    /* ... (código inalterado) ... */
     if (!window.confirm("Tem certeza que deseja desvincular este paciente?"))
       return;
     const response = await PatientService.deletePatient(patientId);
@@ -145,13 +142,15 @@ const CasePatients = ({ caseId }) => {
           <Users size={24} className="text-blue_dark" />
           Pacientes do Caso
         </h2>
-        <button
-          onClick={handleAddPatient}
-          className="bg-blue_dark text-white font-bold py-2 px-4 rounded-md flex items-center gap-2"
-        >
-          <Plus size={18} />
-          Adicionar Paciente
-        </button>
+        {user.role !== "assistente" && (
+          <button
+            onClick={handleAddPatient}
+            className="bg-blue_dark text-white font-bold py-2 px-4 rounded-md flex items-center gap-2"
+          >
+            <Plus size={18} />
+            Adicionar Paciente
+          </button>
+        )}
       </div>
 
       {isLoading ? (
@@ -184,22 +183,24 @@ const CasePatients = ({ caseId }) => {
                   </div>
                   <p className="text-sm text-gray-600">NIC: {patient.nic}</p>
                 </div>
-                <div className="flex items-center gap-4">
-                  <button
-                    onClick={() => handleEditPatient(patient)}
-                    className="text-blue-600 hover:text-blue-800"
-                    title="Editar"
-                  >
-                    <PencilSimple size={24} />
-                  </button>
-                  <button
-                    onClick={() => handleDeletePatient(patient._id)}
-                    className="text-red-600 hover:text-red-800"
-                    title="Remover"
-                  >
-                    <Trash size={24} />
-                  </button>
-                </div>
+                {user.role !== "assistente" && (
+                  <div className="flex items-center gap-4">
+                    <button
+                      onClick={() => handleEditPatient(patient)}
+                      className="text-blue-600 hover:text-blue-800"
+                      title="Editar"
+                    >
+                      <PencilSimple size={24} />
+                    </button>
+                    <button
+                      onClick={() => handleDeletePatient(patient._id)}
+                      className="text-red-600 hover:text-red-800"
+                      title="Remover"
+                    >
+                      <Trash size={24} />
+                    </button>
+                  </div>
+                )}
               </div>
               {expandedPatientId === patient._id && (
                 <PatientDetails patient={patient} />

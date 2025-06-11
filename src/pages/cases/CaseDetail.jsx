@@ -1,4 +1,3 @@
-// src/pages/cases/CaseDetail.jsx (Versão Completa e Final)
 import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import {
@@ -6,18 +5,19 @@ import {
   ArrowLeft,
   Info,
   Scroll,
-  PencilSimple, // Ícone para o botão de editar
+  PencilSimple,
 } from "@phosphor-icons/react";
 import { toast } from "react-hot-toast";
-
 import CaseService from "../../services/cases/caseService";
 import ReportService from "../../services/reports/reportService";
 import CasePatients from "./CasePatients";
 import CaseEvidences from "./CaseEvidences";
+import { useAuth } from "../../contexts/useAuth";
 
 const CaseDetail = () => {
   const { caseId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [caseData, setCaseData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -38,13 +38,19 @@ const CaseDetail = () => {
     if (caseId) {
       loadCaseDetails();
     }
-  }, [caseId]);
+  }, [caseId, navigate]);
 
   const handleGenerateReport = async () => {
+    // 1. A MENSAGEM DE CARREGAMENTO É EXIBIDA AQUI
     toast.loading("Gerando laudo...");
+
+    // O serviço que gera o PDF é chamado
     const result = await ReportService.generateReportFromCase(caseId);
+
+    // 2. A MENSAGEM DE CARREGAMENTO É REMOVIDA
     toast.dismiss();
 
+    // 3. UMA MENSAGEM DE SUCESSO OU ERRO É EXIBIDA
     if (result.success) {
       toast.success("Download do laudo iniciado!");
     } else {
@@ -72,15 +78,15 @@ const CaseDetail = () => {
               {caseData.title}
             </h1>
             <div className="flex gap-4 mt-4 md:mt-0">
-              {/* Botão de Editar */}
-              <Link to={`/cases/${caseId}/edit`}>
-                <button className="bg-white hover:bg-gray-100 text-gray-800 font-bold py-2 px-4 rounded-lg flex items-center gap-2 shadow-md border transition-colors">
-                  <PencilSimple size={20} />
-                  Editar Caso
-                </button>
-              </Link>
+              {user.role !== "assistente" && (
+                <Link to={`/cases/${caseId}/edit`}>
+                  <button className="bg-white hover:bg-gray-100 text-gray-800 font-bold py-2 px-4 rounded-lg flex items-center gap-2 shadow-md border transition-colors">
+                    <PencilSimple size={20} />
+                    Editar Caso
+                  </button>
+                </Link>
+              )}
 
-              {/* Botão de Gerar Laudo */}
               <button
                 onClick={handleGenerateReport}
                 className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2 shadow-md transition-transform hover:scale-105"

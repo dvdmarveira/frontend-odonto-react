@@ -1,21 +1,15 @@
-// src/pages/cases/Cases.jsx (Versão Final Corrigida)
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import {
-  Eye,
-  Plus,
-  Trash,
-  MagnifyingGlass,
-  CaretLeft,
-  CaretRight,
-} from "@phosphor-icons/react";
+import { Eye, Plus, MagnifyingGlass, Funnel } from "@phosphor-icons/react"; // Ícone Trash removido, Funnel adicionado
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "react-hot-toast";
 import CaseService from "../../services/cases/caseService";
+import { useAuth } from "../../contexts/useAuth"; // Hook para pegar o usuário logado
 
 const Cases = () => {
   const navigate = useNavigate();
+  const { user } = useAuth(); // Pega os dados do usuário logado
   const [cases, setCases] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [pagination, setPagination] = useState({});
@@ -25,8 +19,8 @@ const Cases = () => {
     arquivados: 0,
   });
   const [searchTerm, setSearchTerm] = useState("");
+  const [myCasesFilter, setMyCasesFilter] = useState(false); // Estado para o novo filtro
 
-  // Função para calcular os stats a partir dos dados recebidos
   const calculateStats = (casesData) => {
     return casesData.reduce(
       (acc, caso) => {
@@ -43,13 +37,10 @@ const Cases = () => {
     setIsLoading(true);
     const response = await CaseService.getCases({}, page);
 
-    // CORREÇÃO: Verifica se a resposta foi bem sucedida e tem dados
     if (response.success && response.data) {
       const casesData = response.data.cases || [];
       setCases(casesData);
       setPagination(response.data.pagination || {});
-
-      // Calcula os stats localmente para evitar erros de 'null'
       const calculatedStats = calculateStats(casesData);
       setStats(calculatedStats);
     } else {
@@ -65,23 +56,19 @@ const Cases = () => {
     loadCases();
   }, []);
 
-  const handleDeleteCase = async (caseId) => {
-    if (!window.confirm("Tem certeza que deseja excluir este caso?")) return;
-    const response = await CaseService.deleteCase(caseId);
-    if (response.success) {
-      toast.success("Caso excluído com sucesso!");
-      loadCases();
-    } else {
-      toast.error(response.error);
-    }
-  };
+  // A FUNÇÃO handleDeleteCase FOI REMOVIDA
 
-  // Filtra os casos com base na busca
-  const filteredCases = cases.filter(
-    (caso) =>
+  // Filtro atualizado para incluir a lógica de "Meus Casos"
+  const filteredCases = cases.filter((caso) => {
+    const searchMatch =
+      !searchTerm ||
       caso.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      caso.responsible?.name?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+      caso.responsible?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const myCasesMatch = !myCasesFilter || caso.responsible?._id === user._id;
+
+    return searchMatch && myCasesMatch;
+  });
 
   const formatarData = (data) =>
     format(new Date(data), "dd/MM/yyyy", { locale: ptBR });
@@ -117,7 +104,7 @@ const Cases = () => {
         </div>
       </div>
 
-      {/* Barra de Busca e Botão de Adicionar */}
+      {/* Barra de Busca e Botões de Ação */}
       <div className="mb-6 flex items-center justify-between gap-4">
         <div className="flex-1 relative">
           <input
@@ -132,6 +119,20 @@ const Cases = () => {
             className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
           />
         </div>
+
+        {/* NOVO BOTÃO DE FILTRO "MEUS CASOS" */}
+        <button
+          onClick={() => setMyCasesFilter(!myCasesFilter)}
+          className={`px-6 py-2 rounded-lg flex items-center gap-2 font-semibold transition-colors ${
+            myCasesFilter
+              ? "bg-blue-600 text-white"
+              : "bg-white text-gray-700 border"
+          }`}
+        >
+          <Funnel size={20} />
+          Meus Casos
+        </button>
+
         <button
           onClick={() => navigate("/cases/add")}
           className="bg-blue_dark text-white px-6 py-2 rounded-lg flex items-center gap-2"
@@ -172,6 +173,7 @@ const Cases = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4">
+                    {/* BOTÃO DE EXCLUSÃO REMOVIDO DAQUI */}
                     <div className="flex space-x-4">
                       <Link
                         to={`/cases/${caso._id}`}
@@ -180,13 +182,6 @@ const Cases = () => {
                       >
                         <Eye size={22} weight="bold" />
                       </Link>
-                      <button
-                        onClick={() => handleDeleteCase(caso._id)}
-                        className="text-red-600 hover:text-red-900"
-                        title="Excluir Caso"
-                      >
-                        <Trash size={22} weight="bold" />
-                      </button>
                     </div>
                   </td>
                 </tr>
