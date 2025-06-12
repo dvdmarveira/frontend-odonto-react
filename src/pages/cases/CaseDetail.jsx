@@ -6,6 +6,7 @@ import {
   Info,
   Scroll,
   PencilSimple,
+  Spinner,
 } from "@phosphor-icons/react";
 import { toast } from "react-hot-toast";
 import CaseService from "../../services/cases/caseService";
@@ -17,7 +18,7 @@ import { useAuth } from "../../contexts/useAuth";
 const CaseDetail = () => {
   const { caseId } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user } = useAuth(); // Pega o usuário para checar a função (role)
   const [caseData, setCaseData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -38,19 +39,18 @@ const CaseDetail = () => {
     if (caseId) {
       loadCaseDetails();
     }
-  }, [caseId, navigate]);
+  }, [caseId]);
 
   const handleGenerateReport = async () => {
-    // 1. A MENSAGEM DE CARREGAMENTO É EXIBIDA AQUI
     toast.loading("Gerando laudo...");
+    // Passa a função do usuário para o serviço
+    const result = await ReportService.generateReportFromCase(
+      caseId,
+      user.role
+    );
 
-    // O serviço que gera o PDF é chamado
-    const result = await ReportService.generateReportFromCase(caseId);
-
-    // 2. A MENSAGEM DE CARREGAMENTO É REMOVIDA
     toast.dismiss();
 
-    // 3. UMA MENSAGEM DE SUCESSO OU ERRO É EXIBIDA
     if (result.success) {
       toast.success("Download do laudo iniciado!");
     } else {
@@ -58,7 +58,15 @@ const CaseDetail = () => {
     }
   };
 
-  if (isLoading) return <p className="p-6 text-center">Carregando...</p>;
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-full p-8">
+        <Spinner size={32} className="animate-spin text-blue_dark" />
+        <p className="ml-4">Carregando detalhes do caso...</p>
+      </div>
+    );
+  }
+
   if (!caseData) return <p className="p-6 text-center">Caso não encontrado.</p>;
 
   return (
@@ -76,6 +84,7 @@ const CaseDetail = () => {
           <div className="md:flex justify-between items-center">
             <h1 className="text-4xl font-bold text-gray-800">
               {caseData.title}
+              {/* CORRIGIDO */}
             </h1>
             <div className="flex gap-4 mt-4 md:mt-0">
               {user.role !== "assistente" && (
@@ -118,6 +127,7 @@ const CaseDetail = () => {
               <p>
                 <strong>Responsável:</strong>{" "}
                 {caseData.responsible?.name || "Não atribuído"}
+                {/* CORRIGIDO */}
               </p>
               <p>
                 <strong>Histórico:</strong> {caseData.historico || "N/A"}
@@ -137,8 +147,8 @@ const CaseDetail = () => {
           <div className="bg-white p-6 rounded-xl shadow-lg">
             <CaseEvidences
               caseId={caseId}
-              evidences={caseData.evidences}
-              onEvidenceAdded={loadCaseDetails}
+              evidences={caseData.evidences} /* CORRIGIDO */
+              onEvidenceAdded={loadCaseDetails} /* CORRIGIDO */
             />
           </div>
 

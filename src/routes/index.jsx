@@ -1,13 +1,25 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "../contexts/useAuth";
 import Layout from "../components/Layout";
-import { toast } from "react-hot-toast"; // 1. Importar o toast
+import { toast } from "react-hot-toast";
 
 // --- PÁGINAS PÚBLICAS ---
 import Login from "../pages/Login";
 import Register from "../pages/Register";
 import NotFound from "../pages/NotFound";
-// Componentes temporários
+import Profile from "../pages/Profile";
+
+// --- PÁGINAS PROTEGIDAS ---
+import OverviewDashboard from "../pages/Dashboard";
+import ChartsDashboard from "../components/Dashboard/Dashboard";
+import Cases from "../pages/cases/Cases";
+import CaseDetail from "../pages/cases/CaseDetail";
+import AddCase from "../pages/cases/AddCase";
+import Users from "../pages/users/AdminUsers";
+import UserForm from "../pages/users/UserForm";
+import Patients from "../pages/patients/Patients"; // Nova página
+import Evidences from "../pages/evidences/Evidences"; // Nova página
+
 const ForgotPassword = () => (
   <div className="p-6">Página de Recuperação de Senha</div>
 );
@@ -15,38 +27,20 @@ const ResetPassword = () => (
   <div className="p-6">Página de Redefinição de Senha</div>
 );
 
-// --- PÁGINAS PROTEGIDAS ---
-import Dashboard from "../pages/Dashboard";
-import Cases from "../pages/cases/Cases";
-import CaseDetail from "../pages/cases/CaseDetail";
-import AddCase from "../pages/cases/AddCase";
-import Users from "../pages/users/AdminUsers";
-import UserForm from "../pages/users/UserForm";
-
-// Componente para proteger rotas
 const ProtectedRoute = ({ children, roles = [] }) => {
   const { user, isAuthenticated } = useAuth();
-
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-
-  // 2. LÓGICA ATUALIZADA AQUI
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
   if (roles.length > 0 && !roles.includes(user.role)) {
-    // Exibe o aviso de erro antes de redirecionar
     toast.error("Você não tem permissão para acessar esta página.");
     return <Navigate to="/dashboard" replace />;
   }
-
   return <Layout>{children}</Layout>;
 };
 
 const AppRoutes = () => {
   const { isAuthenticated } = useAuth();
-
   return (
     <Routes>
-      {/* --- Rotas Públicas --- */}
       <Route
         path="/login"
         element={isAuthenticated ? <Navigate to="/dashboard" /> : <Login />}
@@ -58,7 +52,6 @@ const AppRoutes = () => {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password/:token" element={<ResetPassword />} />
 
-      {/* --- Rotas Protegidas --- */}
       <Route
         path="/"
         element={
@@ -71,12 +64,45 @@ const AppRoutes = () => {
         path="/dashboard"
         element={
           <ProtectedRoute>
-            <Dashboard />
+            <OverviewDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard/novo"
+        element={
+          <ProtectedRoute>
+            <ChartsDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <Profile />
           </ProtectedRoute>
         }
       />
 
-      {/* Casos */}
+      {/* Novas rotas de consulta */}
+      <Route
+        path="/patients"
+        element={
+          <ProtectedRoute>
+            <Patients />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/evidences"
+        element={
+          <ProtectedRoute>
+            <Evidences />
+          </ProtectedRoute>
+        }
+      />
+
       <Route
         path="/cases"
         element={
@@ -110,7 +136,6 @@ const AppRoutes = () => {
         }
       />
 
-      {/* Admin */}
       <Route
         path="/admin/users"
         element={
@@ -136,7 +161,6 @@ const AppRoutes = () => {
         }
       />
 
-      {/* Rota "Pega-Tudo" para página não encontrada */}
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

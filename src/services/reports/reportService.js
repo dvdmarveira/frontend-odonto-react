@@ -1,12 +1,13 @@
-// src/services/reports/reportService.js (Versão Corrigida)
 import api from "../api/axios.config";
+import { toast } from "react-hot-toast";
+import { addSignatureToPdf } from "../../utils/pdfUtils";
 
 class ReportService {
-  // Busca todos os laudos, com filtros
+  // ... (outras funções existentes como getReports, getReportById)
+
   async getReports(filters = {}) {
     try {
       const queryString = new URLSearchParams(filters).toString();
-      // CORREÇÃO: Rota corrigida
       const response = await api.get(`/reports?${queryString}`);
       return { success: true, data: response.data.data };
     } catch (error) {
@@ -17,10 +18,8 @@ class ReportService {
     }
   }
 
-  // Busca um laudo específico por ID
   async getReportById(reportId) {
     try {
-      // CORREÇÃO: Rota corrigida
       const response = await api.get(`/reports/${reportId}`);
       return { success: true, data: response.data.data };
     } catch (error) {
@@ -34,17 +33,27 @@ class ReportService {
   /**
    * Gera um novo laudo em PDF a partir de um ID de CASO.
    * @param {string} caseId - O ID do CASO para gerar o laudo.
+   * @param {string} userRole - A função do usuário que está solicitando o laudo.
    * @returns {Promise<object>}
    */
-  async generateReportFromCase(caseId) {
+  async generateReportFromCase(caseId, userRole) {
+    // Adicionado userRole como parâmetro
     try {
-      // CORREÇÃO: Rota corrigida para corresponder ao backend
       const response = await api.get(`/reports/generate-pdf/${caseId}`, {
-        responseType: "blob", // Importante para receber o arquivo
+        responseType: "blob",
       });
 
-      // Cria um link temporário para o navegador fazer o download
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      let finalPdfBlob = response.data;
+      const signatureBase64 = localStorage.getItem("userSignature");
+
+      // Adiciona a assinatura APENAS se o usuário for "perito" e uma assinatura existir
+      if (userRole === "perito" && signatureBase64) {
+        toast.loading("Adicionando assinatura de perito...");
+        finalPdfBlob = await addSignatureToPdf(response.data, signatureBase64);
+        toast.dismiss();
+      }
+
+      const url = window.URL.createObjectURL(finalPdfBlob);
       const link = document.createElement("a");
       link.href = url;
       link.setAttribute("download", `laudo-caso-${caseId}.pdf`);
@@ -69,7 +78,6 @@ class ReportService {
    */
   async downloadReport(reportId) {
     try {
-      // CORREÇÃO: Rota corrigida
       const response = await api.get(`/reports/${reportId}/download`, {
         responseType: "blob",
       });
@@ -90,10 +98,6 @@ class ReportService {
       };
     }
   }
-
-  // MÉTODOS REMOVIDOS: Funções de CRUD, templates, imagens e histórico
-  // foram removidas pois não possuem rotas correspondentes no backend.
-  // A criação e edição de laudos acontece via geração de PDF e outras lógicas.
 }
 
 export default new ReportService();
