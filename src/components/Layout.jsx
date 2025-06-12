@@ -36,18 +36,24 @@ const Layout = ({ children }) => {
   };
 
   const NavLink = ({ to, icon, text }) => {
-    const isActive = location.pathname === to;
+    const isActive =
+      location.pathname === to || location.pathname.startsWith(`${to}/`);
+    // Exceção para o dashboard principal não ficar ativo em sub-rotas
+    if (to === "/dashboard" && location.pathname !== "/dashboard") {
+      // Não é mais necessário com a lógica do startsWith, mas mantendo para clareza
+    }
+
     return (
       <li
-        className={`border-b border-gray-200 py-2 ${
+        className={`border-b border-gray-200 py-1 ${
           isActive ? "bg-blue-50" : ""
         }`}
       >
         <Link
           to={to}
-          className={`flex items-center gap-3 px-2 py-1 transition-colors duration-200 ${
+          className={`flex items-center gap-3 px-2 py-1.5 transition-colors duration-200 rounded-md ${
             isActive
-              ? "text-blue_secondary font-medium"
+              ? "text-blue_secondary font-semibold"
               : "text-gray_primary hover:text-blue_secondary"
           }`}
         >

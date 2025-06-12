@@ -17,9 +17,10 @@ import CaseDetail from "../pages/cases/CaseDetail";
 import AddCase from "../pages/cases/AddCase";
 import Users from "../pages/users/AdminUsers";
 import UserForm from "../pages/users/UserForm";
-import Patients from "../pages/patients/Patients"; // Nova página
-import Evidences from "../pages/evidences/Evidences"; // Nova página
+import Patients from "../pages/patients/Patients";
+import Evidences from "../pages/evidences/Evidences";
 
+// --- COMPONENTES TEMPORÁRIOS ---
 const ForgotPassword = () => (
   <div className="p-6">Página de Recuperação de Senha</div>
 );
@@ -27,9 +28,12 @@ const ResetPassword = () => (
   <div className="p-6">Página de Redefinição de Senha</div>
 );
 
+// --- COMPONENTE DE ROTA PROTEGIDA ---
 const ProtectedRoute = ({ children, roles = [] }) => {
   const { user, isAuthenticated } = useAuth();
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
   if (roles.length > 0 && !roles.includes(user.role)) {
     toast.error("Você não tem permissão para acessar esta página.");
     return <Navigate to="/dashboard" replace />;
@@ -37,10 +41,12 @@ const ProtectedRoute = ({ children, roles = [] }) => {
   return <Layout>{children}</Layout>;
 };
 
+// --- DEFINIÇÃO DE ROTAS ---
 const AppRoutes = () => {
   const { isAuthenticated } = useAuth();
   return (
     <Routes>
+      {/* --- Rotas Públicas --- */}
       <Route
         path="/login"
         element={isAuthenticated ? <Navigate to="/dashboard" /> : <Login />}
@@ -52,6 +58,7 @@ const AppRoutes = () => {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password/:token" element={<ResetPassword />} />
 
+      {/* --- Rotas Protegidas --- */}
       <Route
         path="/"
         element={
@@ -85,7 +92,7 @@ const AppRoutes = () => {
         }
       />
 
-      {/* Novas rotas de consulta */}
+      {/* Rotas de Consulta */}
       <Route
         path="/patients"
         element={
@@ -103,6 +110,7 @@ const AppRoutes = () => {
         }
       />
 
+      {/* Rotas de Casos */}
       <Route
         path="/cases"
         element={
@@ -136,6 +144,7 @@ const AppRoutes = () => {
         }
       />
 
+      {/* Rotas de Admin */}
       <Route
         path="/admin/users"
         element={
@@ -161,6 +170,7 @@ const AppRoutes = () => {
         }
       />
 
+      {/* Rota "Pega-Tudo" para página não encontrada */}
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
