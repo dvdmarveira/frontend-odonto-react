@@ -1,8 +1,16 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import peridentalLogo from "../assets/imgs/logo/peridentalLogo.svg";
-import { Question, UserCircle } from "@phosphor-icons/react";
+import {
+  Question,
+  UserCircle,
+  Gauge,
+  PresentationChart,
+  Briefcase,
+  Users,
+  Archive,
+  UsersThree,
+} from "@phosphor-icons/react";
 import { useAuth } from "../contexts/useAuth";
-import Dashboard from "../components/Dashboard/Dashboard.jsx";
 
 const Layout = ({ children }) => {
   const location = useLocation();
@@ -10,10 +18,15 @@ const Layout = ({ children }) => {
   const { user, signOut, hasPermission } = useAuth();
 
   const getPageTitle = () => {
-    if (location.pathname.includes("/users")) return "GESTÃO DE ACESSO";
-    if (location.pathname.match(/\/cases\/\d+/)) return "CASO DETALHADO";
-    if (location.pathname === "/cases/add") return "NOVOS CASOS";
-    if (location.pathname === "/dashboard") return "VISÃO GERAL";
+    const path = location.pathname;
+    if (path.includes("/admin/users")) return "GESTÃO DE ACESSO";
+    if (path.includes("/profile")) return "MEU PERFIL";
+    if (path.match(/\/cases\/\d+/)) return "CASO DETALHADO";
+    if (path === "/cases/add") return "NOVOS CASOS";
+    if (path === "/dashboard/novo") return "DASHBOARD DE GRÁFICOS";
+    if (path === "/dashboard") return "VISÃO GERAL";
+    if (path === "/patients") return "CONSULTA DE PACIENTES";
+    if (path === "/evidences") return "CONSULTA DE EVIDÊNCIAS";
     return "GESTÃO ODONTO-LEGAL";
   };
 
@@ -22,10 +35,41 @@ const Layout = ({ children }) => {
     navigate("/login");
   };
 
+  const NavLink = ({ to, icon, text }) => {
+    const isActive = location.pathname.startsWith(to);
+
+    // Condição especial para a "Visão Geral" não ficar ativa em outras rotas de dashboard
+    if (to === "/dashboard" && location.pathname !== "/dashboard") {
+      return (
+        <li className="border-b border-gray-200 py-1">
+          <Link to={to} className="flex items-center gap-3 px-2 py-1.5 transition-colors duration-200 text-gray_primary hover:text-blue_secondary">
+            {icon}
+            <span>{text}</span>
+          </Link>
+        </li>
+      );
+    }
+
+    return (
+      <li className={`border-b border-gray-200 py-1 ${isActive ? "bg-blue-50" : ""}`}>
+        <Link
+          to={to}
+          className={`flex items-center gap-3 px-2 py-1.5 transition-colors duration-200 rounded-md ${
+            isActive
+              ? "text-blue_secondary font-semibold"
+              : "text-gray_primary hover:text-blue_secondary"
+          }`}
+        >
+          {icon}
+          <span>{text}</span>
+        </Link>
+      </li>
+    );
+  };
+
   return (
     <div className="flex flex-col h-screen">
-      {/* Header */}
-      <header className="bg-blue_quaternary text-white py-2 px-6 flex justify-between items-center">
+      <header className="bg-blue_quaternary text-white py-2 px-6 flex justify-between items-center shadow-md z-10">
         <div className="flex items-center">
           <img
             src={peridentalLogo}
@@ -37,122 +81,56 @@ const Layout = ({ children }) => {
         <div className="text-center">
           <h2 className="text-xl font-bold">{getPageTitle()}</h2>
         </div>
-        <div className="text-center absolute right-8 cursor-pointer">
-          <Question size={32} className="text-white hover:text-blue_dark" />
-        </div>
-        <div className="w-[200px]">
-          {/* Espaço vazio para manter o alinhamento */}
+        <div className="flex items-center gap-4">
+          <Question
+            size={28}
+            className="text-white hover:text-blue-200 cursor-pointer"
+          />
         </div>
       </header>
-
-      <div className="flex flex-1">
-        {/* Sidebar */}
-        <aside className="w-64 bg-white border-r border-gray-200 p-4">
-          <div className="flex justify-between items-center mb-2">
-            <div className="flex items-center">
-              <UserCircle size={32} className="text-gray_primary mr-2" />
-              <div>
-                <p className="font-medium text-gray_primary">{user?.name}</p>
-                <p className="text-sm text-gray_primary">
-                  {user?.role === "admin"
-                    ? "Administrador"
-                    : user?.role === "perito"
-                    ? "Perito"
-                    : "Assistente"}
-                </p>
-              </div>
+      <div className="flex flex-1 overflow-hidden">
+        <aside className="w-64 bg-white border-r border-gray-200 p-4 flex flex-col">
+          <div>
+            <div className="flex justify-between items-center mb-4">
+              <Link
+                to="/profile"
+                className="flex items-center gap-2 hover:opacity-80"
+              >
+                <UserCircle size={32} className="text-gray_primary" />
+                <div>
+                  <p className="font-medium text-gray_primary">{user?.name}</p>
+                  <p className="text-sm text-gray_primary capitalize">
+                    {user?.role}
+                  </p>
+                </div>
+              </Link>
+              <button
+                className="text-sm text-red_secondary font-medium hover:underline"
+                onClick={handleLogout}
+              >
+                Sair
+              </button>
             </div>
-            <button
-              className="text-sm text-red_secondary font-medium hover:underline"
-              onClick={handleLogout}
-            >
-              Sair
-            </button>
           </div>
-
-          <nav className="mt-6">
-            <ul className="space-y-2">
-              <li
-                className={`border-b border-gray-200 py-2 ${
-                  location.pathname === "/dashboard" ? "bg-blue-50" : ""
-                }`}
-              >
-                <Link
-                  to="/dashboard"
-                  className={`block transition-colors duration-200 ${
-                    location.pathname === "/dashboard"
-                      ? "text-blue_secondary font-medium"
-                      : "text-gray_primary hover:text-blue_secondary"
-                  }`}
-                >
-                  Visão Geral
-                </Link>
-              </li>
-
+          <nav className="mt-4 flex-1">
+            <ul className="space-y-1">
+              <NavLink to="/dashboard" icon={<Gauge size={20} />} text="Visão Geral" />
+              <NavLink to="/dashboard/novo" icon={<PresentationChart size={20} />} text="Dashboard" />
+              
               {hasPermission("view_cases") && (
-                <li
-                  className={`border-b border-gray-200 py-2 ${
-                    location.pathname === "/cases" ? "bg-blue-50" : ""
-                  }`}
-                >
-                  <Link
-                    to="/cases"
-                    className={`block transition-colors duration-200 ${
-                      location.pathname === "/cases"
-                        ? "text-blue_secondary font-medium"
-                        : "text-gray_primary hover:text-blue_secondary"
-                    }`}
-                  >
-                    Gestão de Casos
-                  </Link>
-                </li>
+                <NavLink to="/cases" icon={<Briefcase size={20} />} text="Gestão de Casos" />
               )}
-
-              <li
-                className={`border-b border-gray-200 py-2 ${
-                  location.pathname.startsWith("/dashboard/novo")
-                    ? "bg-blue-50"
-                    : ""
-                }`}
-              >
-                <Link
-                  to="/dashboard/novo"
-                  className={`block transition-colors duration-200 ${location.pathname.startsWith("/dashboard/novo")
-                      ? "text-blue_secondary font-medium"
-                      : "text-gray_primary hover:text-blue_secondary"
-                    }`}
-                >
-                  Dashboard
-                </Link>
-              </li>
+              
+              <NavLink to="/patients" icon={<Users size={20} />} text="Consultar Pacientes" />
+              <NavLink to="/evidences" icon={<Archive size={20} />} text="Consultar Evidências" />
 
               {hasPermission("manage_users") && (
-                <li
-                  className={`border-b border-gray-200 py-2 ${
-                    location.pathname.includes("/admin/users")
-                      ? "bg-blue-50"
-                      : ""
-                  }`}
-                >
-                  <Link
-                    to="/admin/users"
-                    className={`block transition-colors duration-200 ${
-                      location.pathname.includes("/admin/users")
-                        ? "text-blue_secondary font-medium"
-                        : "text-gray_primary hover:text-blue_secondary"
-                    }`}
-                  >
-                    Gestão de Acesso
-                  </Link>
-                </li>
+                <NavLink to="/admin/users" icon={<UsersThree size={20} />} text="Gestão de Acesso" />
               )}
             </ul>
           </nav>
         </aside>
-
-        {/* Main Content */}
         <main className="flex-1 flex flex-col bg-[#fbfbfb]">
-          {/* Content */}
           <div className="flex-1 overflow-auto">{children}</div>
         </main>
       </div>

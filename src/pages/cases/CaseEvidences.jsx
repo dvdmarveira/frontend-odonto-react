@@ -7,86 +7,117 @@ import {
   MapPin,
   CaretDown,
   CaretUp,
+  WarningCircle,
 } from "@phosphor-icons/react";
 import AddEvidenceForm from "../../components/AddEvidenceForm";
 import { useAuth } from "../../contexts/useAuth";
 
+// Componente para exibir a imagem e um estado de erro se ela não carregar
+const ImageWithStatus = ({ src, alt }) => {
+  const [hasError, setHasError] = useState(false);
+
+  if (hasError) {
+    return (
+      <div className="w-full h-32 bg-gray-100 rounded-md flex flex-col items-center justify-center text-center p-2">
+        <WarningCircle size={24} className="text-red-500 mb-1" />
+        <span className="text-xs text-red-700">Falha ao carregar.</span>
+        <span className="text-xs text-gray-500">Verifique o backend.</span>
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className="w-full h-32 object-cover"
+      onError={() => {
+        console.error("ERRO: Falha ao carregar imagem no caminho:", src);
+        setHasError(true);
+      }}
+    />
+  );
+};
+
+// Componente que exibe todos os detalhes da evidência
 const EvidenceDetails = ({ evidence }) => {
   const BACKEND_URL = "http://localhost:5000";
 
   const getImageUrl = (path) => {
     if (!path) return "";
     const normalizedPath = path.replace(/\\/g, "/");
-    return `${BACKEND_URL}/uploads/${normalizedPath}`;
+    const filename = normalizedPath.substring(
+      normalizedPath.lastIndexOf("/") + 1
+    );
+    return `${BACKEND_URL}/uploads/${filename}`;
   };
 
-  const generateMapsLink = () => {
-    const baseUrl = "https://www.google.com/maps/search/?api=1&query=";
-    if (evidence.location?.coordinates?.length === 2) {
-      const [longitude, latitude] = evidence.location.coordinates;
-      return `${baseUrl}${latitude},${longitude}`;
-    }
-    if (evidence.address) {
-      return `${baseUrl}${encodeURIComponent(evidence.address)}`;
-    }
-    return null;
-  };
-
-  const mapsLink = generateMapsLink();
+  const imagePaths = evidence.filePaths || evidence.files || [];
 
   return (
-    <div className="mt-4 pt-4 border-t border-gray-200 text-sm text-gray-700 space-y-3">
-      {evidence.type === "imagem" && evidence.filePaths?.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-          {evidence.filePaths.map((filePath, index) => (
-            <a
-              key={index}
-              href={getImageUrl(filePath)}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <img
-                src={getImageUrl(filePath)}
-                alt={`Evidência ${index + 1}`}
-                className="w-full h-32 object-cover rounded-md shadow-md hover:scale-105 transition-transform"
-              />
-            </a>
-          ))}
+    <div className="mt-4 pt-4 border-t border-gray-200 space-y-4">
+      {/* Seção de Imagens */}
+      {evidence.type === "imagem" && imagePaths.length > 0 && (
+        <div>
+          <h4 className="text-sm font-semibold text-gray-700 mb-2">
+            Imagens da Evidência
+          </h4>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            {imagePaths.map((filename, index) => (
+              <a
+                key={index}
+                href={getImageUrl(filename)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block border rounded-md overflow-hidden hover:shadow-lg transition-shadow"
+              >
+                <ImageWithStatus
+                  src={getImageUrl(filename)}
+                  alt={`Evidência ${index + 1}`}
+                />
+              </a>
+            ))}
+          </div>
         </div>
       )}
 
-      {evidence.type === "texto" && (
-        <p className="bg-gray-100 p-3 rounded-md my-2 whitespace-pre-wrap">
-          {evidence.content}
-        </p>
+      {/* Seção de Conteúdo de Texto */}
+      {evidence.type === "texto" && evidence.content && (
+        <div>
+          <h4 className="text-sm font-semibold text-gray-700 mb-2">
+            Conteúdo do Texto
+          </h4>
+          <p className="text-sm bg-gray-50 p-3 rounded-md whitespace-pre-wrap text-gray-800">
+            {evidence.content}
+          </p>
+        </div>
       )}
 
-      {evidence.annotations?.length > 0 && (
-        <p>
-          <strong>Anotações:</strong> {evidence.annotations.join(", ")}
-        </p>
-      )}
-
-      {(evidence.address || mapsLink) && (
-        <div className="flex items-center justify-between mt-2">
-          <div className="flex items-center gap-2">
-            <MapPin size={16} className="text-gray-500" />
-            <p>
-              <strong>Local:</strong> {evidence.address || "Coordenadas GPS"}
-            </p>
+      {/* Seção de Detalhes Adicionais */}
+      <div>
+        <h4 className="text-sm font-semibold text-gray-700 mb-2">
+          Detalhes Adicionais
+        </h4>
+        <div className="text-sm text-gray-800 bg-gray-50 p-4 rounded-md space-y-2">
+          <div className="flex justify-between">
+            <span className="font-medium text-gray-500">Anotações:</span>
+            <span className="text-right">
+              {evidence.annotations?.join(", ") || (
+                <i className="text-gray-400">N/A</i>
+              )}
+            </span>
           </div>
-          {mapsLink && (
-            <a
-              href={mapsLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 hover:underline flex items-center gap-1 text-xs font-semibold"
-            >
-              Ver no Mapa
-            </a>
+          {/* A EXIBIÇÃO DO ENDEREÇO FOI REMOVIDA DAQUI */}
+          {evidence.location?.coordinates && (
+            <div className="flex justify-between">
+              <span className="font-medium text-gray-500">Coordenadas:</span>
+              <span>
+                {`Lat: ${evidence.location.coordinates[1]}, Lon: ${evidence.location.coordinates[0]}`}
+              </span>
+            </div>
           )}
         </div>
-      )}
+      </div>
     </div>
   );
 };
@@ -94,7 +125,7 @@ const EvidenceDetails = ({ evidence }) => {
 const CaseEvidences = ({ caseId, evidences = [], onEvidenceAdded }) => {
   const [showEvidenceForm, setShowEvidenceForm] = useState(false);
   const [expandedEvidenceId, setExpandedEvidenceId] = useState(null);
-  const { user } = useAuth(); // Obter o usuário logado
+  const { user } = useAuth();
 
   const handleToggleDetails = (evidenceId) => {
     setExpandedEvidenceId(
