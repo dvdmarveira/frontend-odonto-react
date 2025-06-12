@@ -1,13 +1,12 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "../contexts/useAuth";
 import Layout from "../components/Layout";
-import { toast } from "react-hot-toast"; // 1. Importar o toast
+import { toast } from "react-hot-toast";
 
 // --- PÁGINAS PÚBLICAS ---
 import Login from "../pages/Login";
 import Register from "../pages/Register";
 import NotFound from "../pages/NotFound";
-// Componentes temporários
 const ForgotPassword = () => (
   <div className="p-6">Página de Recuperação de Senha</div>
 );
@@ -16,7 +15,8 @@ const ResetPassword = () => (
 );
 
 // --- PÁGINAS PROTEGIDAS ---
-import Dashboard from "../pages/Dashboard";
+import OverviewDashboard from "../pages/Dashboard";
+import ChartsDashboard from "../components/Dashboard/Dashboard"; // Importando o dashboard de gráficos
 import Cases from "../pages/cases/Cases";
 import CaseDetail from "../pages/cases/CaseDetail";
 import AddCase from "../pages/cases/AddCase";
@@ -31,9 +31,7 @@ const ProtectedRoute = ({ children, roles = [] }) => {
     return <Navigate to="/login" replace />;
   }
 
-  // 2. LÓGICA ATUALIZADA AQUI
   if (roles.length > 0 && !roles.includes(user.role)) {
-    // Exibe o aviso de erro antes de redirecionar
     toast.error("Você não tem permissão para acessar esta página.");
     return <Navigate to="/dashboard" replace />;
   }
@@ -67,11 +65,21 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
+      {/* Rota para o Dashboard "Visão Geral" */}
       <Route
         path="/dashboard"
         element={
           <ProtectedRoute>
-            <Dashboard />
+            <OverviewDashboard />
+          </ProtectedRoute>
+        }
+      />
+      {/* Rota para o Dashboard de Gráficos */}
+      <Route
+        path="/dashboard/novo"
+        element={
+          <ProtectedRoute>
+            <ChartsDashboard />
           </ProtectedRoute>
         }
       />

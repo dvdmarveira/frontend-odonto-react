@@ -6,7 +6,6 @@ const Dashboard = () => {
   const [dataInicio, setDataInicio] = useState('');
   const [dataFim, setDataFim] = useState('');
 
-  // referências de gráficos (mantidos como let)
   let graficoRosca = null;
   let graficoDistribuicao = null;
   let graficoEtnia = null;
@@ -26,9 +25,9 @@ const Dashboard = () => {
     try {
       const res = await fetch('http://localhost:5001/api/casos');
       const data = await res.json();
-      setDadosCasos(data);
+      setDadosCasos(Array.isArray(data) ? data : data?.casos || []);
     } catch (erro) {
-      alert('Erro ao carregar dados.');
+      console.error('Erro ao carregar dados:', erro);
     }
   };
 
@@ -45,7 +44,7 @@ const Dashboard = () => {
     const contagem = {};
     dados.forEach((caso) => {
       const valor = chave.includes('.')
-        ? chave.split('.').reduce((o, k) => (o?.[k] ?? null), caso)
+        ? chave.split('.').reduce((o, k) => o?.[k], caso)
         : caso[chave];
       if (valor) contagem[valor] = (contagem[valor] || 0) + 1;
     });
@@ -152,33 +151,41 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="dashboard">
-      <h2 style={{ textAlign: 'center', marginBottom: '1rem' }}>📊 Painel de Casos</h2>
+    <div className="p-4 md:p-8 lg:p-12 max-w-screen-2xl mx-auto font-sans bg-gray-50 min-h-screen">
+      <h2 className="text-3xl font-bold text-center text-gray-800 mb-10">📊 Painel de Casos</h2>
 
-      <div className="filtros" style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginBottom: '2rem' }}>
-        <div>
-          <label>Início:</label><br />
-          <input type="date" value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} />
+      {/* Filtros */}
+      <div className="flex flex-col md:flex-row justify-center items-center gap-6 mb-10">
+        <div className="flex flex-col">
+          <label className="mb-1 font-semibold text-gray-700">Data de Início:</label>
+          <input
+            type="date"
+            value={dataInicio}
+            onChange={(e) => setDataInicio(e.target.value)}
+            className="p-2 rounded-lg border border-gray-300 shadow-sm w-48"
+          />
         </div>
-        <div>
-          <label>Fim:</label><br />
-          <input type="date" value={dataFim} onChange={(e) => setDataFim(e.target.value)} />
+        <div className="flex flex-col">
+          <label className="mb-1 font-semibold text-gray-700">Data de Fim:</label>
+          <input
+            type="date"
+            value={dataFim}
+            onChange={(e) => setDataFim(e.target.value)}
+            className="p-2 rounded-lg border border-gray-300 shadow-sm w-48"
+          />
         </div>
       </div>
 
-      <div
-        className="grade-graficos"
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-          gap: '2rem',
-          padding: '0 1rem'
-        }}
-      >
-        <div id="graficoRosca"></div>
-        <div id="graficoDistribuicao"></div>
-        <div id="graficoEtnia"></div>
-        <div id="graficoEvolucao"></div>
+      {/* Gráficos */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 px-4">
+        {['graficoRosca', 'graficoDistribuicao', 'graficoEtnia', 'graficoEvolucao'].map(id => (
+          <div
+            key={id}
+            className="bg-white rounded-2xl shadow-lg p-6 w-full overflow-hidden"
+          >
+            <div id={id} className="w-full h-full min-h-[300px]"></div>
+          </div>
+        ))}
       </div>
     </div>
   );

@@ -117,11 +117,10 @@ const Layout = ({ children }) => {
               >
                 <Link
                   to="/dashboard/novo"
-                  className={`block transition-colors duration-200 ${
-                    location.pathname.startsWith("/dashboard/novo")
+                  className={`block transition-colors duration-200 ${location.pathname.startsWith("/dashboard/novo")
                       ? "text-blue_secondary font-medium"
                       : "text-gray_primary hover:text-blue_secondary"
-                  }`}
+                    }`}
                 >
                   Dashboard
                 </Link>
