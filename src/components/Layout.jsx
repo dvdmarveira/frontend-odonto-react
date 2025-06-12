@@ -36,19 +36,22 @@ const Layout = ({ children }) => {
   };
 
   const NavLink = ({ to, icon, text }) => {
-    const isActive =
-      location.pathname === to || location.pathname.startsWith(`${to}/`);
-    // Exceção para o dashboard principal não ficar ativo em sub-rotas
+    const isActive = location.pathname.startsWith(to);
+
+    // Condição especial para a "Visão Geral" não ficar ativa em outras rotas de dashboard
     if (to === "/dashboard" && location.pathname !== "/dashboard") {
-      // Não é mais necessário com a lógica do startsWith, mas mantendo para clareza
+      return (
+        <li className="border-b border-gray-200 py-1">
+          <Link to={to} className="flex items-center gap-3 px-2 py-1.5 transition-colors duration-200 text-gray_primary hover:text-blue_secondary">
+            {icon}
+            <span>{text}</span>
+          </Link>
+        </li>
+      );
     }
 
     return (
-      <li
-        className={`border-b border-gray-200 py-1 ${
-          isActive ? "bg-blue-50" : ""
-        }`}
-      >
+      <li className={`border-b border-gray-200 py-1 ${isActive ? "bg-blue-50" : ""}`}>
         <Link
           to={to}
           className={`flex items-center gap-3 px-2 py-1.5 transition-colors duration-200 rounded-md ${
@@ -111,42 +114,18 @@ const Layout = ({ children }) => {
           </div>
           <nav className="mt-4 flex-1">
             <ul className="space-y-1">
-              <NavLink
-                to="/dashboard"
-                icon={<Gauge size={20} />}
-                text="Visão Geral"
-              />
-              <NavLink
-                to="/dashboard/novo"
-                icon={<PresentationChart size={20} />}
-                text="Dashboard"
-              />
-
+              <NavLink to="/dashboard" icon={<Gauge size={20} />} text="Visão Geral" />
+              <NavLink to="/dashboard/novo" icon={<PresentationChart size={20} />} text="Dashboard" />
+              
               {hasPermission("view_cases") && (
-                <NavLink
-                  to="/cases"
-                  icon={<Briefcase size={20} />}
-                  text="Gestão de Casos"
-                />
+                <NavLink to="/cases" icon={<Briefcase size={20} />} text="Gestão de Casos" />
               )}
-
-              <NavLink
-                to="/patients"
-                icon={<Users size={20} />}
-                text="Consultar Pacientes"
-              />
-              <NavLink
-                to="/evidences"
-                icon={<Archive size={20} />}
-                text="Consultar Evidências"
-              />
+              
+              <NavLink to="/patients" icon={<Users size={20} />} text="Consultar Pacientes" />
+              <NavLink to="/evidences" icon={<Archive size={20} />} text="Consultar Evidências" />
 
               {hasPermission("manage_users") && (
-                <NavLink
-                  to="/admin/users"
-                  icon={<UsersThree size={20} />}
-                  text="Gestão de Acesso"
-                />
+                <NavLink to="/admin/users" icon={<UsersThree size={20} />} text="Gestão de Acesso" />
               )}
             </ul>
           </nav>
